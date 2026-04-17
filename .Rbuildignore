@@ -1,2 +1,8 @@
 ^\.github$
 ^codecov\.yml$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^air\.toml$
+^LICENSE\.md$
+^README\.Rmd$
