@@ -24,6 +24,18 @@ jobs:
           sudo docker image prune --all --force
           sudo docker builder prune -a
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install tree-sitter-cli
+        run: npm install -g tree-sitter-cli
+
+      - name: Install ODBC (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y unixodbc-dev
+
       - name: Caching
         uses: Swatinem/rust-cache@v2
         with:

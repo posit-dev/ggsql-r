@@ -44,10 +44,27 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Increase disk space
+        if: runner.os == 'Linux'
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
           sudo docker image prune --all --force
           sudo docker builder prune -a
+
+      - name: Install ODBC (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y unixodbc-dev
+
+      - name: Install ODBC (macOS)
+        if: runner.os == 'macOS'
+        run: brew install unixodbc
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install tree-sitter-cli
+        run: npm install -g tree-sitter-cli
 
       - name: Caching
         uses: Swatinem/rust-cache@v2
