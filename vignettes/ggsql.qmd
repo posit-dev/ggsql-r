@@ -73,7 +73,7 @@ WHERE year = 2007
 VISUALIZE gdpPercap AS x, lifeExp AS y, continent AS stroke, pop AS size
 DRAW point
   SETTING fill => null
-SCALE size TO [2, 15]
+SCALE size TO (2, 15)
 ")
 
 str(plot)
