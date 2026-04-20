@@ -28,7 +28,10 @@
 #' }
 #'
 #' shinyApp(ui, server)
-ggsql_session_reader <- function(reader, session = shiny::getDefaultReactiveDomain()) {
+ggsql_session_reader <- function(
+  reader,
+  session = shiny::getDefaultReactiveDomain()
+) {
   rlang::check_installed("shiny", reason = "for ggsql Shiny bindings.")
   if (is.null(session)) {
     cli::cli_abort(
@@ -81,15 +84,18 @@ ggsqlOutput <- function(outputId, width = "100%", height = "400px") {
   rlang::check_installed("shiny", reason = "for ggsql Shiny bindings.")
   htmltools::tagList(
     ggsql_viz_dep(),
-    htmltools::tag("ggsql-viz", list(
-      id = outputId,
-      class = "ggsql-output",
-      style = sprintf(
-        "width: %s; height: %s;",
-        htmltools::validateCssUnit(width),
-        htmltools::validateCssUnit(height)
+    htmltools::tag(
+      "ggsql-viz",
+      list(
+        id = outputId,
+        class = "ggsql-output",
+        style = sprintf(
+          "width: %s; height: %s;",
+          htmltools::validateCssUnit(width),
+          htmltools::validateCssUnit(height)
+        )
       )
-    ))
+    )
   )
 }
 
@@ -105,7 +111,13 @@ ggsqlOutput <- function(outputId, width = "100%", height = "400px") {
 #'
 #' @rdname ggsqlOutput
 #' @export
-renderGgsql <- function(expr, reader = NULL, ..., env = parent.frame(), quoted = FALSE) {
+renderGgsql <- function(
+  expr,
+  reader = NULL,
+  ...,
+  env = parent.frame(),
+  quoted = FALSE
+) {
   rlang::check_installed("shiny", reason = "for ggsql Shiny bindings.")
   force(env)
   if (!quoted) {
@@ -131,11 +143,13 @@ renderGgsql <- function(expr, reader = NULL, ..., env = parent.frame(), quoted =
       session <- shiny::getDefaultReactiveDomain()
       r <- reader %||% get_session_reader(session)
       if (is.null(r)) {
-        cli::cli_abort(c(
-          "No ggsql reader available.",
-          i = "Call {.code ggsql_session_reader(duckdb_reader())} in your server function before using {.fn renderGgsql}.",
-          i = "Or pass a {.arg reader} argument directly to {.fn renderGgsql}."
-        ))
+        cli::cli_abort(
+          c(
+            "No ggsql reader available.",
+            i = "Call {.code ggsql_session_reader(duckdb_reader())} in your server function before using {.fn renderGgsql}.",
+            i = "Or pass a {.arg reader} argument directly to {.fn renderGgsql}."
+          )
+        )
       }
       query <- resolve_data_refs(value, r, envir = eval_env)
       spec <- ggsql_execute(r, query)

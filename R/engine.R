@@ -173,7 +173,9 @@ resolve_data_refs <- function(query, reader, envir) {
     )
 
     if (!is.data.frame(df)) {
-      cli::cli_abort("{.code {ref}} refers to a {.cls {class(df)}} object, not a data frame.")
+      cli::cli_abort(
+        "{.code {ref}} refers to a {.cls {class(df)}} object, not a data frame."
+      )
     }
 
     internal_name <- paste0("__", prefix, "_", name, "__")
@@ -184,6 +186,7 @@ resolve_data_refs <- function(query, reader, envir) {
   query
 }
 
+# ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 # Inline chunk options (--| and #| prefix support)
 # ---------------------------------------------------------------------------

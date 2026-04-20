@@ -1,6 +1,12 @@
 #' @noRd
-ggsql_viz_tag <- function(spec_json, width = "100%", height = "400px",
-                          asp = NULL, caption = NULL, align = NULL) {
+ggsql_viz_tag <- function(
+  spec_json,
+  width = "100%",
+  height = "400px",
+  asp = NULL,
+  caption = NULL,
+  align = NULL
+) {
   css_width <- htmltools::validateCssUnit(width %||% "100%")
   size_css <- if (is.null(asp)) {
     css_height <- htmltools::validateCssUnit(height %||% "400px")
@@ -21,11 +27,17 @@ ggsql_viz_tag <- function(spec_json, width = "100%", height = "400px",
     style <- paste(style, margin_style)
   }
 
-  viz <- htmltools::tag("ggsql-viz", list(
-    style = style,
-    htmltools::tags$script(type = "application/json", htmltools::HTML(spec_json)),
-    ggsql_viz_dep()
-  ))
+  viz <- htmltools::tag(
+    "ggsql-viz",
+    list(
+      style = style,
+      htmltools::tags$script(
+        type = "application/json",
+        htmltools::HTML(spec_json)
+      ),
+      ggsql_viz_dep()
+    )
+  )
 
   if (!is.null(caption) && nzchar(caption)) {
     htmltools::tagList(

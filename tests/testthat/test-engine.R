@@ -219,7 +219,7 @@ test_that("writer defaults to interactive vegalite", {
     "DRAW point"
   )
   out <- run_query(query)
-  expect_match(out, "vega-embed")
+  expect_match(out, "ggsql-viz")
 })
 
 test_that("writer = 'vegalite_svg' produces SVG output", {
@@ -308,7 +308,7 @@ test_that("we can knit a mixed-chunk document", {
   expect_equal(out_file, out)
   expect_true(file.exists(out))
 
-  # Check that visualization was rendered (contains vega-embed script)
+  # Check that visualization was rendered (contains ggsql-viz custom element)
   content <- readLines(out)
-  expect_true(any(grepl("vega-embed", content)))
+  expect_true(any(grepl("ggsql-viz", content)))
 })
