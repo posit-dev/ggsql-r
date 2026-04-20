@@ -1,4 +1,17 @@
 url: https://r.ggsql.org
 template:
   bootstrap: 5
+  bootswatch: cosmo
+  bslib:
+    bg: "#F9F9F9"
+    fg: "#001219"
+    primary: "#005F73"
+    secondary: "#0A9396"
+    tertiary: "#94D2BD"
+    info: "#E9D8A6"
+    base_font: {google: "Nunito Sans"}
+    heading_font: {google: "Nunito Sans"}
+    code_font: {google: "Fira Code"}
+    headings-font-weight: 400
+  theme: pygments
 
