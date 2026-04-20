@@ -33,6 +33,7 @@ Suggests:
     reticulate,
     rmarkdown,
     rsvg,
+    shiny,
     testthat (>= 3.0.0),
     V8,
     withr

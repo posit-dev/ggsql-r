@@ -11,8 +11,8 @@ Spec <- R6::R6Class(
 
     print = function(...) {
       json <- ggsql_render(vegalite_writer(), self)
-      html <- vegalite_html(json)
-      print(htmltools::browsable(htmltools::HTML(html)))
+      tag <- ggsql_viz_tag(json)
+      print(htmltools::browsable(tag))
     }
   )
 )
@@ -39,22 +39,22 @@ knit_print.Spec <- function(x, ..., inline = FALSE) {
     writer_type,
     vegalite = {
       json <- ggsql_render(vegalite_writer(), x)
-      html <- vegalite_html(
+      if (is.null(options$fig.dim)) {
+        width <- inches_to_px(options$fig.width)
+        height <- inches_to_px(options$fig.height)
+        asp <- options$fig.asp
+      } else {
+        width <- inches_to_px(options$fig.dim[1])
+        height <- inches_to_px(options$fig.dim[2])
+        asp <- NULL
+      }
+      tag <- ggsql_viz_tag(
         json,
-        width = options$fig.width,
-        height = options$fig.height
+        width = width,
+        height = height,
+        asp = asp
       )
-      x <- htmltools::browsable(htmltools::HTML(html))
-      deps <- htmltools::resolveDependencies(htmltools::findDependencies(
-        x,
-        tagify = FALSE
-      ))
-      knitr::asis_output(
-        sprintf("\n```{=html}\n%s\n```\n", x),
-        meta = if (length(deps)) {
-          list(deps)
-        }
-      )
+      knitr::knit_print(tag)
     },
     vegalite_svg = ,
     vegalite_png = {

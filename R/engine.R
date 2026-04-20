@@ -129,7 +129,7 @@ names.ggsql_tables <- function(x) {
 # Data reference resolution (r: and py: prefixes)
 # ---------------------------------------------------------------------------
 
-resolve_data_refs <- function(query, reader) {
+resolve_data_refs <- function(query, reader, envir) {
   refs <- gregexpr(
     "(?:r|py):[a-zA-Z_][a-zA-Z0-9_.]*",
     query,
@@ -150,10 +150,10 @@ resolve_data_refs <- function(query, reader) {
     df <- switch(
       tolower(prefix),
       r = try_fetch(
-        get(name, envir = knitr::knit_global()),
+        get(name, envir = envir),
         error = function(cnd) {
           cli::cli_abort(
-            "Column reference {.code {ref}}: object {.val {name}} not found in R environment."
+            "Data reference {.code {ref}}: object {.val {name}} not found in R environment."
           )
         }
       ),
@@ -165,7 +165,7 @@ resolve_data_refs <- function(query, reader) {
         obj <- reticulate::py[[name]]
         if (is.null(obj)) {
           cli::cli_abort(
-            "Column reference {.code {ref}}: object {.val {name}} not found in Python environment."
+            "Data reference {.code {ref}}: object {.val {name}} not found in Python environment."
           )
         }
         obj
@@ -173,7 +173,7 @@ resolve_data_refs <- function(query, reader) {
     )
 
     if (!is.data.frame(df)) {
-      cli::cli_abort("{.code {ref}} does not refer to a data frame.")
+      cli::cli_abort("{.code {ref}} refers to a {.cls {class(df)}} object, not a data frame.")
     }
 
     internal_name <- paste0("__", prefix, "_", name, "__")
@@ -182,115 +182,6 @@ resolve_data_refs <- function(query, reader) {
   }
 
   query
-}
-
-# ---------------------------------------------------------------------------
-# Vega-Lite HTML rendering
-# ---------------------------------------------------------------------------
-
-vegalite_html <- function(
-  spec_json,
-  width = NULL,
-  height = NULL,
-  asp = NULL,
-  caption = NULL,
-  align = "center"
-) {
-  ggsql_env$vis_counter <- (ggsql_env$vis_counter %||% 0L) + 1L
-  vis_id <- paste0("ggsql-vis-", ggsql_env$vis_counter)
-
-  # Convert fig.width/fig.height (inches) to pixels at 96 dpi,
-  # or use defaults if not specified
-  css_width <- if (!is.null(width)) {
-    if (is.numeric(width)) paste0(round(width * 96), "px") else width
-  } else {
-    "100%"
-  }
-  css_height <- if (!is.null(height)) {
-    if (is.numeric(height)) paste0(round(height * 96), "px") else height
-  }
-  css_height <- if (is.null(asp)) {
-    paste0("height: ", css_height %||% "400px")
-  } else {
-    paste0("aspect-ratio: ", asp)
-  }
-
-  margin_style <- switch(
-    align %||% "center",
-    center = "margin-left: auto; margin-right: auto;",
-    right = "margin-left: auto;",
-    ""
-  )
-
-  html <- sprintf(
-    '<div id="%s-outer" style="width: %s; overflow: hidden; %s">
-<div id="%s" style="width: 100%%; min-width: 450px; %s;"></div>
-</div>
-
-<script type="text/javascript">
-(function() {
-  const spec = %s;
-  const visId = "%s";
-  const minWidth = 450;
-
-  if (!window.__ggsql_vega_ready) {
-    const loadScript = (src) => new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = src;
-      script.onload = resolve;
-      script.onerror = reject;
-      document.head.appendChild(script);
-    });
-    window.__ggsql_vega_ready = loadScript("https://cdn.jsdelivr.net/npm/vega@6/build/vega.min.js")
-      .then(() => loadScript("https://cdn.jsdelivr.net/npm/vega-lite@6/build/vega-lite.min.js"))
-      .then(() => loadScript("https://cdn.jsdelivr.net/npm/vega-embed@7/build/vega-embed.min.js"));
-  }
-
-  function scaleToFit(outer, inner) {
-    const available = outer.clientWidth;
-    if (available < minWidth) {
-      const scale = available / minWidth;
-      inner.style.transform = "scale(" + scale + ")";
-      inner.style.transformOrigin = "top left";
-      outer.style.height = (inner.scrollHeight * scale) + "px";
-    } else {
-      inner.style.transform = "";
-      outer.style.height = "";
-    }
-  }
-
-  window.__ggsql_vega_ready
-    .then(() => vegaEmbed("#" + visId, spec, {"actions": true}))
-    .then(() => {
-      const outer = document.getElementById(visId + "-outer");
-      const inner = document.getElementById(visId);
-      scaleToFit(outer, inner);
-      const ro = new ResizeObserver(() => scaleToFit(outer, inner));
-      ro.observe(outer);
-    })
-    .catch(err => {
-      document.getElementById(visId).innerText = "Failed to load Vega: " + err;
-    });
-})();
-</script>',
-    vis_id,
-    css_width,
-    margin_style,
-    vis_id,
-    css_height,
-    spec_json,
-    vis_id
-  )
-
-  if (!is.null(caption) && nzchar(caption)) {
-    html <- sprintf(
-      '<figure>\n%s\n<figcaption>%s</figcaption>\n</figure>',
-      html,
-      htmltools::htmlEscape(caption)
-    )
-  }
-
-  html
 }
 
 # ---------------------------------------------------------------------------
@@ -381,7 +272,7 @@ ggsql_engine <- function(options) {
 }
 
 ggsql_engine_eval <- function(query, reader, options) {
-  query <- resolve_data_refs(query, reader)
+  query <- resolve_data_refs(query, reader, envir = knitr::knit_global())
   validated <- ggsql_validate(query)
 
   if (!validated$has_visual) {
@@ -423,20 +314,18 @@ ggsql_engine_eval <- function(query, reader, options) {
   switch(
     writer_type,
     vegalite = {
-      # Embed Vega-Lite spec directly with vega-embed from CDN.
-      # This avoids vegawidget version constraints (ggsql uses Vega-Lite v6).
       writer <- vegalite_writer()
       json <- ggsql_render(writer, spec)
       if (is.null(options$fig.dim)) {
-        width <- options$fig.width
-        height <- options$fig.height
+        width <- inches_to_px(options$fig.width)
+        height <- inches_to_px(options$fig.height)
         asp <- options$fig.asp
       } else {
-        width <- options$fig.dim[1]
-        height <- options$fig.dim[2]
+        width <- inches_to_px(options$fig.dim[1])
+        height <- inches_to_px(options$fig.dim[2])
         asp <- NULL
       }
-      out <- vegalite_html(
+      tag <- ggsql_viz_tag(
         json,
         width = width,
         height = height,
@@ -444,6 +333,8 @@ ggsql_engine_eval <- function(query, reader, options) {
         caption = options$fig.cap,
         align = options$fig.align
       )
+      out <- knitr::knit_print(tag)
+      knitr::knit_meta_add(attr(out, "knit_meta"))
       knitr::engine_output(options, options$code, out = out)
     },
     vegalite_svg = render_static_figure(spec, "svg", options),
@@ -487,6 +378,10 @@ write_static_figure <- function(spec, format, options) {
 render_static_figure <- function(spec, format, options) {
   out <- write_static_figure(spec, format, options)
   knitr::engine_output(options, options$code, knitr::sew(out, options))
+}
+
+inches_to_px <- function(x) {
+  if (is.numeric(x)) paste0(round(x * 96), "px") else x
 }
 
 on_load(
