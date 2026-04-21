@@ -122,7 +122,7 @@ names.ggsql_tables <- function(x) {
     error = function(cnd) data.frame(name = character())
   )
   tables <- if (nrow(tables) > 0) tables[[1]] else character()
-  tables[!grepl("^__ggsql_", tables, perl = TRUE)]
+  tables[!grepl("^__(ggsql|r|py)_", tables, perl = TRUE)]
 }
 
 # ---------------------------------------------------------------------------
