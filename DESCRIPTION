@@ -41,5 +41,6 @@ Config/rextendr/version: 0.4.2.9000
 Depends:
     R (>= 4.2)
 VignetteBuilder: quarto
-URL: https://r.ggsql.org
+URL: https://r.ggsql.org, https://github.com/posit-dev/ggsql-r
 Config/Needs/website: tidyverse/tidytemplate
+BugReports: https://github.com/posit-dev/ggsql-r/issues
