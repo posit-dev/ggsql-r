@@ -33,6 +33,12 @@
       this._container = null;
       /** @type {ResizeObserver | null} */
       this._resizeObserver = null;
+      /** @type {string} */
+      this._baseHeight = "";
+      /** @type {boolean} */
+      this._isScaled = false;
+      /** @type {number} */
+      this._renderVersion = 0;
     }
 
     connectedCallback() {
@@ -90,13 +96,20 @@
       var available = this.clientWidth;
       if (!this._container) return;
       if (available < MIN_WIDTH) {
+        if (!this._isScaled) {
+          this._baseHeight = this.style.height;
+        }
         var scale = available / MIN_WIDTH;
         this._container.style.transform = "scale(" + scale + ")";
         this._container.style.transformOrigin = "top left";
         this.style.height = (this._container.scrollHeight * scale) + "px";
+        this._isScaled = true;
       } else {
         this._container.style.transform = "";
-        this.style.height = "";
+        if (this._isScaled) {
+          this.style.height = this._baseHeight;
+          this._isScaled = false;
+        }
       }
     }
 
@@ -109,6 +122,9 @@
         return;
       }
 
+      if (!this._isScaled) {
+        this._baseHeight = this.style.height;
+      }
       this._finalize();
 
       var container = document.createElement("div");
@@ -116,11 +132,17 @@
       this.innerHTML = "";
       this.appendChild(container);
       this._container = container;
+      var renderVersion = ++this._renderVersion;
 
       /** @type {VegaEmbedFn} */
       var embed = /** @type {any} */ (window).vegaEmbed;
       embed(container, this._spec, { actions: true })
         .then(function(result) {
+          // A newer render may have started while this embed was in flight.
+          if (renderVersion !== self._renderVersion || self._container !== container) {
+            result.view.finalize();
+            return;
+          }
           self._view = result.view;
           self._scaleToFit();
           self._resizeObserver = new ResizeObserver(function() {
@@ -129,6 +151,9 @@
           self._resizeObserver.observe(self);
         })
         .catch(function(err) {
+          if (renderVersion !== self._renderVersion || self._container !== container) {
+            return;
+          }
           self.textContent = "ggsql render error: " + err;
         });
     }
