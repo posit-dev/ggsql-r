@@ -327,7 +327,7 @@ ggsql_engine_eval <- function(query, reader, options) {
         height <- inches_to_px(options$fig.dim[2])
         asp <- NULL
       }
-      tag <- ggsql_viz_tag(
+      widget <- ggsql_widget(
         json,
         width = width,
         height = height,
@@ -335,7 +335,8 @@ ggsql_engine_eval <- function(query, reader, options) {
         caption = options$fig.cap,
         align = options$fig.align
       )
-      out <- knitr::knit_print(tag)
+      html <- htmltools::as.tags(widget, standalone = FALSE)
+      out <- knitr::knit_print(html)
       knitr::knit_meta_add(attr(out, "knit_meta"))
       knitr::engine_output(options, options$code, out = out)
     },

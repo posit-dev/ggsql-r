@@ -5,178 +5,64 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 function createDeferred() {
-  let resolve;
-  let reject;
-  const promise = new Promise((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
+  let resolve, reject;
+  const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
   return { promise, resolve, reject };
 }
 
 function createEnvironment() {
-  class MockHTMLElement {
-    constructor(tagName = "div") {
-      this.tagName = String(tagName).toUpperCase();
-      this.children = [];
-      this.parentNode = null;
-      this.style = {};
-      this.attributes = {};
-      this.textContent = "";
-      this.isConnected = true;
-      this.clientWidth = 450;
-      this.scrollHeight = 200;
-      this._innerHTML = "";
-    }
+  var capturedDef = null;
 
-    appendChild(child) {
-      child.parentNode = this;
-      this.children.push(child);
-      return child;
-    }
-
-    removeChild(child) {
-      this.children = this.children.filter((node) => node !== child);
-      child.parentNode = null;
-      return child;
-    }
-
-    querySelector(selector) {
-      return this.querySelectorAll(selector)[0] || null;
-    }
-
-    querySelectorAll(selector) {
-      const matches = [];
-      const walk = (node) => {
-        for (const child of node.children) {
-          if (matchesSelector(child, selector)) {
-            matches.push(child);
-          }
-          walk(child);
-        }
-      };
-      walk(this);
-      return matches;
-    }
-
-    remove() {
-      if (this.parentNode) {
-        this.parentNode.removeChild(this);
+  function createMockElement() {
+    var el = {
+      style: {},
+      children: [],
+      clientWidth: 450,
+      scrollHeight: 200,
+      _innerHTML: "",
+      get innerHTML() { return this._innerHTML; },
+      set innerHTML(v) { this._innerHTML = v; this.children = []; this.textContent = ""; },
+      textContent: "",
+      get firstChild() { return this.children[0] || null; },
+      appendChild: function(child) { this.children.push(child); return child; },
+      insertBefore: function(child, ref) {
+        var idx = ref ? this.children.indexOf(ref) : this.children.length;
+        if (idx === -1) idx = this.children.length;
+        this.children.splice(idx, 0, child);
+        return child;
       }
-    }
-
-    setAttribute(name, value) {
-      this.attributes[name] = String(value);
-    }
-
-    getAttribute(name) {
-      return Object.hasOwn(this.attributes, name) ? this.attributes[name] : null;
-    }
-
-    set innerHTML(value) {
-      this._innerHTML = value;
-      this.children = [];
-      this.textContent = "";
-    }
-
-    get innerHTML() {
-      return this._innerHTML;
-    }
+    };
+    return el;
   }
 
-  function matchesSelector(node, selector) {
-    if (selector === 'script[type="application/json"]') {
-      return (
-        node.tagName === "SCRIPT" &&
-        node.getAttribute("type") === "application/json"
-      );
-    }
-    return node.tagName.toLowerCase() === selector.toLowerCase();
-  }
-
-  const definedElements = new Map();
-  const resizeObservers = [];
-
-  class MockResizeObserver {
-    constructor(callback) {
-      this.callback = callback;
-      this.target = null;
-      this.disconnected = false;
-      resizeObservers.push(this);
-    }
-
-    observe(target) {
-      this.target = target;
-    }
-
-    disconnect() {
-      this.disconnected = true;
-      this.target = null;
-    }
-  }
-
-  const document = {
-    head: new MockHTMLElement("head"),
-    createElement(tagName) {
-      const element = new MockHTMLElement(tagName);
-      if (String(tagName).toLowerCase() === "script") {
-        element.setAttribute("type", "");
-      }
-      return element;
-    }
-  };
-
-  const window = {
-    vegaEmbed: null
-  };
-
-  const context = {
-    window,
-    document,
-    HTMLElement: MockHTMLElement,
-    customElements: {
-      define(name, ctor) {
-        definedElements.set(name, ctor);
-      }
+  var context = {
+    HTMLWidgets: {
+      widget: function(def) { capturedDef = def; }
     },
-    ResizeObserver: MockResizeObserver,
-    requestAnimationFrame(callback) {
-      callback();
+    vegaEmbed: null,
+    document: {
+      createElement: function(tag) { return createMockElement(); }
     },
-    console,
-    setTimeout,
-    clearTimeout,
-    Promise
+    console: console,
+    Promise: Promise
   };
-  context.globalThis = context;
-  window.window = window;
-  window.document = document;
 
-  const scriptPath = path.join(
-    __dirname,
-    "..",
-    "..",
-    "inst",
-    "shiny",
-    "ggsql-viz.js"
-  );
-  const source = fs.readFileSync(scriptPath, "utf8");
+  var scriptPath = path.join(__dirname, "..", "..", "inst", "htmlwidgets", "ggsql_viz.js");
+  var source = fs.readFileSync(scriptPath, "utf8");
   vm.runInNewContext(source, context, { filename: scriptPath });
 
-  const GgsqlViz = definedElements.get("ggsql-viz");
-  assert.ok(GgsqlViz, "custom element should be registered");
+  assert.ok(capturedDef, "widget definition should be registered");
+  assert.equal(capturedDef.name, "ggsql_viz");
 
   return {
-    createViz() {
-      const el = new GgsqlViz();
-      el.isConnected = true;
-      return el;
+    createInstance: function(clientWidth) {
+      var el = createMockElement();
+      el.clientWidth = clientWidth || 450;
+      var instance = capturedDef.factory(el, el.clientWidth, 400);
+      return { el: el, instance: instance };
     },
-    setEmbed(impl) {
-      window.vegaEmbed = impl;
-    },
-    getLatestResizeObserver() {
-      return resizeObservers[resizeObservers.length - 1] || null;
+    setEmbed: function(impl) {
+      context.vegaEmbed = impl;
     }
   };
 }
@@ -187,77 +73,56 @@ async function flushMicrotasks() {
 }
 
 test("restores authored height after rerendering while scaled down", async () => {
-  const env = createEnvironment();
-  env.setEmbed((container, spec) => {
+  var env = createEnvironment();
+  env.setEmbed(function(container, spec) {
     container.scrollHeight = 200;
     return Promise.resolve({
-      view: {
-        spec,
-        finalize() {}
-      }
+      view: { spec: spec, finalize: function() {} }
     });
   });
 
-  const el = env.createViz();
-  el.style.height = "400px";
-  el.clientWidth = 225;
+  var w = env.createInstance(225); // < 450 = scaled
+  w.el.style.height = "400px";
 
-  el.spec = { name: "first" };
+  w.instance.renderValue({ spec: { name: "first" } });
   await flushMicrotasks();
-  assert.equal(el.style.height, "100px");
+  assert.equal(w.el.style.height, "100px"); // 200 * (225/450) = 100
 
-  el.spec = { name: "second" };
+  w.instance.renderValue({ spec: { name: "second" } });
   await flushMicrotasks();
-  assert.equal(el.style.height, "100px");
+  assert.equal(w.el.style.height, "100px");
 
-  el.clientWidth = 450;
-  env.getLatestResizeObserver().callback();
-
-  assert.equal(el.style.height, "400px");
+  w.el.clientWidth = 450;
+  w.instance.resize(450, 400);
+  assert.equal(w.el.style.height, "400px");
 });
 
 test("ignores superseded async embed results", async () => {
-  const env = createEnvironment();
-  const first = createDeferred();
-  const second = createDeferred();
-  const calls = [];
+  var env = createEnvironment();
+  var first = createDeferred();
+  var second = createDeferred();
+  var calls = [];
 
-  env.setEmbed((container, spec) => {
-    calls.push({ container, spec });
-    if (calls.length === 1) {
-      return first.promise;
-    }
+  env.setEmbed(function(container, spec) {
+    calls.push({ container: container, spec: spec });
+    if (calls.length === 1) return first.promise;
     return second.promise;
   });
 
-  const el = env.createViz();
+  var w = env.createInstance(450);
 
-  el.spec = { name: "first" };
-  el.spec = { name: "second" };
+  w.instance.renderValue({ spec: { name: "first" } });
+  w.instance.renderValue({ spec: { name: "second" } });
 
-  const staleView = {
-    id: "stale",
-    finalized: false,
-    finalize() {
-      this.finalized = true;
-    }
-  };
-  const latestView = {
-    id: "latest",
-    finalized: false,
-    finalize() {
-      this.finalized = true;
-    }
-  };
+  var staleView = { id: "stale", finalized: false, finalize: function() { this.finalized = true; } };
+  var latestView = { id: "latest", finalized: false, finalize: function() { this.finalized = true; } };
 
   second.resolve({ view: latestView });
   await flushMicrotasks();
-  assert.equal(el._view, latestView);
 
   first.resolve({ view: staleView });
   await flushMicrotasks();
 
-  assert.equal(el._view, latestView);
   assert.equal(staleView.finalized, true);
   assert.equal(latestView.finalized, false);
 });

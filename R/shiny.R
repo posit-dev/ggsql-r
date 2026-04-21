@@ -84,21 +84,12 @@ get_session_reader <- function(session) {
 #'
 #' shinyApp(ui, server)
 ggsqlOutput <- function(outputId, width = "100%", height = "400px") {
-  rlang::check_installed("shiny", reason = "for ggsql Shiny bindings.")
-  htmltools::tagList(
-    ggsql_viz_dep(),
-    htmltools::tag(
-      "ggsql-viz",
-      list(
-        id = outputId,
-        class = "ggsql-output",
-        style = sprintf(
-          "width: %s; height: %s;",
-          htmltools::validateCssUnit(width),
-          htmltools::validateCssUnit(height)
-        )
-      )
-    )
+  htmlwidgets::shinyWidgetOutput(
+    outputId,
+    name = "ggsql_viz",
+    width = width,
+    height = height,
+    package = "ggsql"
   )
 }
 
@@ -121,48 +112,47 @@ renderGgsql <- function(
   env = parent.frame(),
   quoted = FALSE
 ) {
-  rlang::check_installed("shiny", reason = "for ggsql Shiny bindings.")
-  force(env)
   if (!quoted) {
     expr <- substitute(expr)
   }
+  force(env)
 
-  shiny::createRenderFunction(
-    function() {
-      eval_env <- new.env(parent = env)
-      value <- eval(expr, envir = eval_env)
+  render_expr <- quote({
+    eval_env <- new.env(parent = env)
+    value <- eval(expr, envir = eval_env)
 
-      if (inherits(value, "Spec")) {
-        json <- ggsql_render(vegalite_writer(), value)
-        return(jsonlite::parse_json(json))
-      }
+    if (inherits(value, "Spec")) {
+      json <- ggsql_render(vegalite_writer(), value)
+      return(ggsql_widget(json))
+    }
 
-      if (!is.character(value) || length(value) != 1L) {
-        cli::cli_abort(
-          "Expected a ggsql query string or a {.cls Spec} object, not {.cls {class(value)}}."
+    if (!is.character(value) || length(value) != 1L) {
+      cli::cli_abort(
+        "Expected a ggsql query string or a {.cls Spec} object, not {.cls {class(value)}}."
+      )
+    }
+
+    session <- shiny::getDefaultReactiveDomain()
+    r <- reader %||% get_session_reader(session)
+    if (is.null(r)) {
+      cli::cli_abort(
+        c(
+          "No ggsql reader available.",
+          i = "Call {.code ggsql_session_reader(duckdb_reader())} in your server function before using {.fn renderGgsql}.",
+          i = "Or pass a {.arg reader} argument directly to {.fn renderGgsql}."
         )
-      }
+      )
+    }
+    query <- resolve_data_refs(value, r, envir = eval_env)
+    spec <- ggsql_execute(r, query)
+    json <- ggsql_render(vegalite_writer(), spec)
+    ggsql_widget(json)
+  })
 
-      session <- shiny::getDefaultReactiveDomain()
-      r <- reader %||% get_session_reader(session)
-      if (is.null(r)) {
-        cli::cli_abort(
-          c(
-            "No ggsql reader available.",
-            i = "Call {.code ggsql_session_reader(duckdb_reader())} in your server function before using {.fn renderGgsql}.",
-            i = "Or pass a {.arg reader} argument directly to {.fn renderGgsql}."
-          )
-        )
-      }
-      query <- resolve_data_refs(value, r, envir = eval_env)
-      spec <- ggsql_execute(r, query)
-      json <- ggsql_render(vegalite_writer(), spec)
-      jsonlite::parse_json(json)
-    },
-    transform = function(value, session, name, ...) {
-      list(spec = value)
-    },
-    outputFunc = ggsqlOutput,
-    outputArgs = list(...)
+  htmlwidgets::shinyRenderWidget(
+    render_expr,
+    ggsqlOutput,
+    env = environment(),
+    quoted = TRUE
   )
 }
