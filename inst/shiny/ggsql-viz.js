@@ -1,5 +1,9 @@
 (function() {
   // --- <ggsql-viz> web component ---
+  var style = document.createElement("style");
+  style.textContent = "ggsql-viz { display: block; overflow: hidden; }";
+  document.head.appendChild(style);
+
   class GgsqlViz extends HTMLElement {
     constructor() {
       super();
