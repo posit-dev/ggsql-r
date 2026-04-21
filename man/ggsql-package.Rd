@@ -10,12 +10,21 @@
 
 ggsql allows you to write queries that combine SQL data retrieval with visualization specifications in a single, composable syntax.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://r.ggsql.org}
+  \item \url{https://github.com/posit-dev/ggsql-r}
+  \item Report bugs at \url{https://github.com/posit-dev/ggsql-r/issues}
+}
+
+}
 \author{
-\strong{Maintainer}: George Stagg \email{george.stagg@posit.co} (\href{https://orcid.org/0009-0006-3173-9846}{ORCID})
+\strong{Maintainer}: Thomas Lin Pedersen \email{thomas.pedersen@posit.co} (\href{https://orcid.org/0000-0002-5147-4711}{ORCID})
 
 Authors:
 \itemize{
-  \item Thomas Lin Pedersen \email{thomas.pedersen@posit.co} (\href{https://orcid.org/0000-0002-5147-4711}{ORCID})
+  \item George Stagg \email{george.stagg@posit.co} (\href{https://orcid.org/0009-0006-3173-9846}{ORCID})
   \item Teun van den Brand \email{teun.vandenbrand@posit.co} (\href{https://orcid.org/0000-0002-9335-7468}{ORCID})
 }
 
