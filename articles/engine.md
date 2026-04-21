@@ -58,9 +58,9 @@ GROUP BY species
 
 | count | species   |
 |------:|:----------|
-|   124 | Gentoo    |
 |   152 | Adelie    |
 |    68 | Chinstrap |
+|   124 | Gentoo    |
 
 ### Chunk options
 
@@ -182,11 +182,11 @@ GROUP BY species
 
 ``` r
 names(sql)
-#> [1] "__r_gapminder_2002__" "may_airquality"       "penguin_count"
+#> [1] "may_airquality" "penguin_count"
 
 sql$penguin_count
 #>   number   species
-#> 1    124    Gentoo
-#> 2    152    Adelie
+#> 1    152    Adelie
+#> 2    124    Gentoo
 #> 3     68 Chinstrap
 ```
