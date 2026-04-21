@@ -83,18 +83,24 @@ new_ggsql_tables <- function() {
 #' @export
 `$.ggsql_tables` <- function(x, name) {
   safe_name <- gsub('"', '""', name, fixed = TRUE)
-  ggsql_execute_sql(get_engine_reader(), paste0('SELECT * FROM "', safe_name, '"'))
+  ggsql_execute_sql(
+    get_engine_reader(knitr::opts_current$get("connection")),
+    paste0('SELECT * FROM "', safe_name, '"')
+  )
 }
 
 #' @export
 `[[.ggsql_tables` <- function(x, name, ...) {
   safe_name <- gsub('"', '""', name, fixed = TRUE)
-  ggsql_execute_sql(get_engine_reader(), paste0('SELECT * FROM "', safe_name, '"'))
+  ggsql_execute_sql(
+    get_engine_reader(knitr::opts_current$get("connection")),
+    paste0('SELECT * FROM "', safe_name, '"')
+  )
 }
 
 #' @export
 print.ggsql_tables <- function(x, ...) {
-  reader <- get_engine_reader()
+  reader <- get_engine_reader(knitr::opts_current$get("connection"))
   tables <- try_fetch(
     ggsql_execute_sql(reader, "SHOW TABLES"),
     error = function(cnd) data.frame(name = character())
@@ -110,12 +116,13 @@ print.ggsql_tables <- function(x, ...) {
 
 #' @export
 names.ggsql_tables <- function(x) {
-  reader <- get_engine_reader()
+  reader <- get_engine_reader(knitr::opts_current$get("connection"))
   tables <- try_fetch(
     ggsql_execute_sql(reader, "SHOW TABLES"),
     error = function(cnd) data.frame(name = character())
   )
-  if (nrow(tables) > 0) tables[[1]] else character()
+  tables <- if (nrow(tables) > 0) tables[[1]] else character()
+  tables[!grepl("^__ggsql_", tables, perl = TRUE)]
 }
 
 # ---------------------------------------------------------------------------
@@ -185,6 +192,7 @@ vegalite_html <- function(
   spec_json,
   width = NULL,
   height = NULL,
+  asp = NULL,
   caption = NULL,
   align = "center"
 ) {
@@ -200,8 +208,11 @@ vegalite_html <- function(
   }
   css_height <- if (!is.null(height)) {
     if (is.numeric(height)) paste0(round(height * 96), "px") else height
+  }
+  css_height <- if (is.null(asp)) {
+    paste0("height: ", css_height %||% "400px")
   } else {
-    "400px"
+    paste0("aspect-ratio: ", asp)
   }
 
   margin_style <- switch(
@@ -213,7 +224,7 @@ vegalite_html <- function(
 
   html <- sprintf(
     '<div id="%s-outer" style="width: %s; overflow: hidden; %s">
-<div id="%s" style="width: 100%%; min-width: 450px; height: %s;"></div>
+<div id="%s" style="width: 100%%; min-width: 450px; %s;"></div>
 </div>
 
 <script type="text/javascript">
@@ -396,7 +407,8 @@ ggsql_engine_eval <- function(query, reader, options) {
 
   # Visualization query: execute and render
   spec <- ggsql_execute(reader, query)
-  writer_type <- options$writer %||% "vegalite"
+  writer_type <- options$writer %||%
+    if (knitr::is_latex_output()) "vegalite_png" else "vegalite"
 
   # If output.var is set, always capture the Vega-Lite JSON
   if (!is.null(options$output.var)) {
@@ -415,10 +427,20 @@ ggsql_engine_eval <- function(query, reader, options) {
       # This avoids vegawidget version constraints (ggsql uses Vega-Lite v6).
       writer <- vegalite_writer()
       json <- ggsql_render(writer, spec)
+      if (is.null(options$fig.dim)) {
+        width <- options$fig.width
+        height <- options$fig.height
+        asp <- options$fig.asp
+      } else {
+        width <- options$fig.dim[1]
+        height <- options$fig.dim[2]
+        asp <- NULL
+      }
       out <- vegalite_html(
         json,
-        width = options$fig.width,
-        height = options$fig.height,
+        width = width,
+        height = height,
+        asp = asp,
         caption = options$fig.cap,
         align = options$fig.align
       )
@@ -437,23 +459,34 @@ ggsql_engine_eval <- function(query, reader, options) {
 
 write_static_figure <- function(spec, format, options) {
   options$label <- options$label %||% "ggsql-chunk"
-  ext <- paste0(".", format)
-  fig <- knitr::fig_path(ext, options, number = 1L)
+  ext <- options$fig.ext %||% paste0(".", format)
+  fig <- knitr::fig_path(ext)
   dir.create(dirname(fig), recursive = TRUE, showWarnings = FALSE)
+
+  if (is.null(options$fig.dim)) {
+    width <- options$fig.width * options$dpi
+    height <- if (is.null(options$fig.asp)) {
+      options$fig.height * options$dpi
+    } else {
+      width * options$fig.asp
+    }
+  } else {
+    width <- options$fig.dim[1] * options$dpi
+    height <- options$fig.dim[2] * options$dpi
+  }
 
   switch(
     format,
-    svg = writeLines(ggsql_to_svg(spec), fig),
-    png = writeBin(ggsql_to_png(spec), fig)
+    svg = writeLines(ggsql_to_svg(spec, width, height), fig),
+    png = writeBin(ggsql_to_png(spec, width, height), fig)
   )
 
-  cap <- options$fig.cap %||% ""
-  sprintf("\n![%s](%s)\n", cap, fig)
+  knitr::include_graphics(fig)
 }
 
 render_static_figure <- function(spec, format, options) {
   out <- write_static_figure(spec, format, options)
-  knitr::engine_output(options, options$code, out)
+  knitr::engine_output(options, options$code, knitr::sew(out, options))
 }
 
 on_load(

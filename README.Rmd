@@ -35,7 +35,11 @@ pak::pak("posit-dev/ggsql")
 
 While one of the core appeals of the ggsql R package is the knitr engine it provides, you can also use it directly in R to execute visual queries:
 
-```{r, writer = 'vegalite_svg'}
+```{r}
+#| writer: vegalite_svg
+#| fig-alt: An example plot created with ggsql through the R bindings. The plot
+#|   shows a scatterplot of the mtcars dataset with mpg on the x axis and disp
+#|   on the y axis
 library(ggsql)
 
 # Create an in-memory DuckDB reader
@@ -53,7 +57,11 @@ DRAW point
 
 We could achieve the same in a ggsql code block by referencing an R dataset directly using the `r:` prefix
 
-```{ggsql, writer = 'vegalite_svg'}
+```{ggsql}
+--| writer: vegalite_svg
+--| fig-alt: An example plot created with ggsql referencing data from the R 
+--|   session. The plot shows a scatterplot of the mtcars dataset with mpg on 
+--|   the x axis and disp on the y axis
 VISUALIZE mpg AS x, disp AS y FROM r:mtcars
 DRAW point
 LABEL

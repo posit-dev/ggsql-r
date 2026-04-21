@@ -13,5 +13,24 @@ template:
     heading_font: {google: "Nunito Sans"}
     code_font: {google: "Fira Code"}
     headings-font-weight: 400
+    navbar-bg: "#DEF1EB"
+    nav-link-color: "#005F73"
   theme: pygments
 
+  includes:
+    in_header: |
+      <script src="https://cdn.jsdelivr.net/gh/posit-dev/supported-by-posit/js/badge.min.js" data-light-bg="#94D2BD" data-dark-bg="#001219"></script>
+
+navbar:
+  bg: "#DEF1EB"
+  type: light
+  structure:
+    left: [intro, engine, reference, news]
+    right: [search, github, ggsql]
+  components:
+    ggsql:
+      text: ggsql.org
+      href: https://ggsql.org
+    engine:
+      text: knitr engine
+      href: articles/engine.html

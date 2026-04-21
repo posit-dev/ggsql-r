@@ -58,8 +58,7 @@ knit_print.Spec <- function(x, ..., inline = FALSE) {
     },
     vegalite_svg = ,
     vegalite_png = {
-      out <- write_static_figure(x, sub("vegalite_", "", writer_type), options)
-      knitr::asis_output(out)
+      write_static_figure(x, sub("vegalite_", "", writer_type), options)
     },
     cli::cli_abort("unknown writer {.val {writer_type}}")
   )

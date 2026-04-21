@@ -6,3 +6,5 @@
 ^air\.toml$
 ^LICENSE\.md$
 ^README\.Rmd$
+^[.]?air[.]toml$
+^\.vscode$

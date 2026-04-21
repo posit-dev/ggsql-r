@@ -95,7 +95,7 @@ Finally we arrive at what we was here for all along: How to get a plot out of it
 vlr <- vegalite_writer()
 ```
 
-Often you don't have to think about this at all since printing the result of a query automatically creates a writer and renders it so that it behaves in the same way as ggplot object:
+Often you don't have to think about this at all since printing the result of a query automatically creates a writer and renders it so that it behaves in the same way as ggplot object (this is also true in Quarto/Rmarkdown documents):
 
 ```{r}
 plot
