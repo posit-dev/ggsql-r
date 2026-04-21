@@ -3,15 +3,25 @@
 ggsql allows you to write queries that combine SQL data retrieval with
 visualization specifications in a single, composable syntax.
 
+## See also
+
+Useful links:
+
+- <https://r.ggsql.org>
+
+- <https://github.com/posit-dev/ggsql-r>
+
+- Report bugs at <https://github.com/posit-dev/ggsql-r/issues>
+
 ## Author
 
-**Maintainer**: George Stagg <george.stagg@posit.co>
-([ORCID](https://orcid.org/0009-0006-3173-9846))
+**Maintainer**: Thomas Lin Pedersen <thomas.pedersen@posit.co>
+([ORCID](https://orcid.org/0000-0002-5147-4711))
 
 Authors:
 
-- Thomas Lin Pedersen <thomas.pedersen@posit.co>
-  ([ORCID](https://orcid.org/0000-0002-5147-4711))
+- George Stagg <george.stagg@posit.co>
+  ([ORCID](https://orcid.org/0009-0006-3173-9846))
 
 - Teun van den Brand <teun.vandenbrand@posit.co>
   ([ORCID](https://orcid.org/0000-0002-9335-7468))
