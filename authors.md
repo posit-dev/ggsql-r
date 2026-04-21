@@ -15,6 +15,9 @@
 
 ## Citation
 
+Source:
+[`DESCRIPTION`](https://github.com/posit-dev/ggsql-r/blob/main/DESCRIPTION)
+
 Pedersen T, Stagg G, van den Brand T (2026). *ggsql: A SQL extension for
 declarative data visualization based on the Grammar of Graphics*. R
 package version 0.2.7, <https://r.ggsql.org>.
