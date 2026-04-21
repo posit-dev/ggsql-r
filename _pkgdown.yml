@@ -26,7 +26,7 @@ navbar:
   type: light
   structure:
     left: [intro, engine, reference, news]
-    right: [search, github, ggsql]
+    right: [ggsql, search, github]
   components:
     ggsql:
       text: ggsql.org
