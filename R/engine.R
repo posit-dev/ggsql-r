@@ -460,7 +460,7 @@ ggsql_engine_eval <- function(query, reader, options) {
 write_static_figure <- function(spec, format, options) {
   options$label <- options$label %||% "ggsql-chunk"
   ext <- options$fig.ext %||% paste0(".", format)
-  fig <- knitr::fig_path(ext)
+  fig <- knitr::fig_path(ext, options)
   dir.create(dirname(fig), recursive = TRUE, showWarnings = FALSE)
 
   if (is.null(options$fig.dim)) {
