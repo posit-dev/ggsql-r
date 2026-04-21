@@ -33,8 +33,6 @@ A `ggsql_validated` object for `ggsql_validate()`. A boolean for
 ``` r
 result <- ggsql_validate("SELECT 1 AS x, 2 AS y VISUALISE x, y DRAW point")
 result
-#> <ggsql_validated> [invalid]
+#> <ggsql_validated> [valid]
 #> • Has VISUALISE clause
-#> Errors:
-#> ✖ Layer 1: Layer 'point' mapping requires the aesthetic '`x`' (or '`y`').
 ```

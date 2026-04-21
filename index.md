@@ -41,7 +41,9 @@ DRAW point
 ")
 ```
 
-![](reference/figures/README-unnamed-chunk-2-1.svg)
+![An example plot created with ggsql through the R bindings. The plot
+shows a scatterplot of the mtcars dataset with mpg on the x axis and
+disp on the y axis](reference/figures/README-unnamed-chunk-2-1.svg)
 
 We could achieve the same in a ggsql code block by referencing an R
 dataset directly using the `r:` prefix
@@ -53,7 +55,10 @@ LABEL
   title => 'That data came from R 🤯'
 ```
 
-![](reference/figures/README-unnamed-chunk-3-1.svg)
+![An example plot created with ggsql referencing data from the R
+session. The plot shows a scatterplot of the mtcars dataset with mpg on
+the x axis and disp on the y
+axis](reference/figures/README-unnamed-chunk-3-1.svg)
 
 The only thing you need to remember is to load ggsql into R in your
 Rmarkdown/Quarto document so the knitr engine is registered.
