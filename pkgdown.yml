@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   engine: engine.html
   ggsql: ggsql.html
-last_built: 2026-04-21T08:48Z
+last_built: 2026-04-21T10:35Z
 urls:
   reference: https://r.ggsql.org/reference
   article: https://r.ggsql.org/articles
