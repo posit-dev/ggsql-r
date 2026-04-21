@@ -1,0 +1,18 @@
+test_that("renderGgsql does not accept output sizing args", {
+  skip_if_not_installed("shiny")
+
+  expect_false("..." %in% names(formals(renderGgsql)))
+  expect_identical(
+    names(formals(renderGgsql)),
+    c("expr", "reader", "env", "quoted")
+  )
+})
+
+test_that("ggsqlOutput owns output sizing", {
+  skip_if_not_installed("shiny")
+
+  output <- ggsqlOutput("chart", width = "123px", height = "456px")
+  output_html <- paste(capture.output(print(output)), collapse = "\n")
+
+  expect_match(output_html, 'style="width:123px;height:456px;"', fixed = TRUE)
+})

@@ -7,7 +7,7 @@
 \usage{
 ggsqlOutput(outputId, width = "100\%", height = "400px")
 
-renderGgsql(expr, reader = NULL, ..., env = parent.frame(), quoted = FALSE)
+renderGgsql(expr, reader = NULL, env = parent.frame(), quoted = FALSE)
 }
 \arguments{
 \item{outputId}{Output variable to read from.}
@@ -20,9 +20,6 @@ from the expression's local scope (see Examples).}
 
 \item{reader}{A \code{Reader} object created by \code{\link[=duckdb_reader]{duckdb_reader()}}. When \code{NULL}
 (the default), the session reader set by \code{\link[=ggsql_session_reader]{ggsql_session_reader()}} is used.}
-
-\item{...}{Additional arguments passed to \code{ggsqlOutput()} when used in an
-R Markdown document.}
 
 \item{env}{The environment in which to evaluate \code{expr}.}
 

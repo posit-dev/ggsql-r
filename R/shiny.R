@@ -98,8 +98,6 @@ ggsqlOutput <- function(outputId, width = "100%", height = "400px") {
 #'   from the expression's local scope (see Examples).
 #' @param reader A `Reader` object created by [duckdb_reader()]. When `NULL`
 #'   (the default), the session reader set by [ggsql_session_reader()] is used.
-#' @param ... Additional arguments passed to `ggsqlOutput()` when used in an
-#'   R Markdown document.
 #' @param env The environment in which to evaluate `expr`.
 #' @param quoted Logical. Is `expr` a quoted expression?
 #'
@@ -108,7 +106,6 @@ ggsqlOutput <- function(outputId, width = "100%", height = "400px") {
 renderGgsql <- function(
   expr,
   reader = NULL,
-  ...,
   env = parent.frame(),
   quoted = FALSE
 ) {
