@@ -56,10 +56,6 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install unixodbc
 
-      - name: Set up MSVC (Windows)
-        if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
