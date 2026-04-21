@@ -39,6 +39,9 @@ ggsql_session_reader <- function(
     )
   }
   session$userData$.ggsql_reader <- reader
+  
+  # Drop the reference so GC can invoke the Rust finalizer on the DuckDB
+  # connection. Deterministic $close() doesn't exist yet on Reader.
   session$onSessionEnded(function() {
     session$userData$.ggsql_reader <- NULL
   })
