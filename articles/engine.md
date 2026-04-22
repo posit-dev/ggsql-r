@@ -186,7 +186,7 @@ names(sql)
 
 sql$penguin_count
 #>   number   species
-#> 1     68 Chinstrap
-#> 2    152    Adelie
-#> 3    124    Gentoo
+#> 1    124    Gentoo
+#> 2     68 Chinstrap
+#> 3    152    Adelie
 ```
