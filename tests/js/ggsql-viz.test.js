@@ -247,6 +247,89 @@ test("rerenders compound specs after moderate width changes", async () => {
   assert.equal(calls[1].hconcat[1].width, 340);
 });
 
+test("passes explicit dimensions and fit autosize for simple specs", async () => {
+  var env = createEnvironment();
+  var calls = [];
+
+  env.setEmbed(function(container, spec) {
+    calls.push(spec);
+    return Promise.resolve({
+      view: {
+        spec: spec,
+        finalize: function() {}
+      }
+    });
+  });
+
+  var w = env.createInstance(600);
+  w.el.clientHeight = 320;
+
+  w.instance.renderValue({
+    spec: { mark: "point" }
+  });
+  await flushMicrotasks();
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].width, 600);
+  assert.equal(calls[0].height, 320);
+  assert.equal(JSON.stringify(calls[0].autosize), JSON.stringify({
+    type: "fit",
+    contains: "padding"
+  }));
+});
+
+test("updates simple specs in-place on resize without re-embedding", async () => {
+  var env = createEnvironment();
+  var embedCalls = 0;
+  var widthCalls = [];
+  var heightCalls = [];
+  var resizeCalls = 0;
+  var runAsyncCalls = 0;
+
+  env.setEmbed(function(container, spec) {
+    embedCalls += 1;
+    return Promise.resolve({
+      view: {
+        spec: spec,
+        finalize: function() {},
+        width: function(value) {
+          widthCalls.push(value);
+          return this;
+        },
+        height: function(value) {
+          heightCalls.push(value);
+          return this;
+        },
+        resize: function() {
+          resizeCalls += 1;
+          return this;
+        },
+        runAsync: function() {
+          runAsyncCalls += 1;
+          return Promise.resolve(this);
+        }
+      }
+    });
+  });
+
+  var w = env.createInstance(600);
+  w.el.clientHeight = 320;
+
+  w.instance.renderValue({ spec: { mark: "point" } });
+  await flushMicrotasks();
+
+  w.el.clientWidth = 540;
+  w.el.clientHeight = 280;
+  w.instance.resize(540, 280);
+  await flushMicrotasks();
+
+  assert.equal(embedCalls, 1);
+  assert.deepEqual(widthCalls, [540]);
+  assert.deepEqual(heightCalls, [280]);
+  assert.equal(resizeCalls, 1);
+  assert.equal(runAsyncCalls, 1);
+});
+
 test("grows compound widgets to fit taller embedded content", async () => {
   var env = createEnvironment();
 
@@ -274,6 +357,43 @@ test("grows compound widgets to fit taller embedded content", async () => {
   await flushMicrotasks();
 
   assert.equal(w.el.style.height, "760px");
+});
+
+test("rerenders compound specs after height changes", async () => {
+  var env = createEnvironment();
+  var calls = [];
+
+  env.setEmbed(function(container, spec) {
+    calls.push(spec);
+    return Promise.resolve({
+      view: {
+        spec: spec,
+        finalize: function() {}
+      }
+    });
+  });
+
+  var w = env.createInstance(900);
+  w.el.clientHeight = 400;
+
+  w.instance.renderValue({
+    spec: {
+      facet: { field: "carb" },
+      columns: 3,
+      spec: { mark: "point" }
+    }
+  });
+  await flushMicrotasks();
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].spec.height, 280);
+
+  w.el.clientHeight = 520;
+  w.instance.resize(900, 520);
+  await flushMicrotasks();
+
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].spec.height, 400);
 });
 
 test("adds a scaled host class below the minimum width", async () => {

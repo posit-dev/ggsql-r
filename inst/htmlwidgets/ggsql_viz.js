@@ -41,7 +41,7 @@ HTMLWidgets.widget({
       this._isScaled = false;
       this._isCompound = false;
       this._renderVersion = 0;
-      this._lastEmbedWidth = 0;
+      this._lastSize = null;
       this._lastValue = null;
     }
 
@@ -55,6 +55,7 @@ HTMLWidgets.widget({
         this._view = null;
       }
       this._container = null;
+      this._lastSize = null;
     }
 
     setScaledState(scaled) {
@@ -88,32 +89,53 @@ HTMLWidgets.widget({
       }
     }
 
-    renderValue(x) {
-      var self = this;
+    currentSize() {
+      return {
+        width: this.clientWidth,
+        height: this.clientHeight
+      };
+    }
 
-      if (!this._authoredHeight) this._authoredHeight = this.style.height;
-      this.finalize();
-
+    createContainer() {
       this.innerHTML = "";
 
       var container = document.createElement("div");
       container.className = "ggsql-container";
       this.appendChild(container);
       this._container = container;
-      this._lastValue = x;
-      this._lastEmbedWidth = this.clientWidth;
+      return container;
+    }
 
-      var spec;
-      this._isCompound = isCompound(x.spec);
+    rememberSize(size) {
+      this._lastSize = {
+        width: size.width,
+        height: size.height
+      };
+    }
+
+    hasMaterialSizeChange(size) {
+      if (!this._lastSize) return true;
+      return (
+        Math.abs(size.width - this._lastSize.width) > 1 ||
+        Math.abs(size.height - this._lastSize.height) > 1
+      );
+    }
+
+    buildSpec(spec, size) {
       if (this._isCompound) {
-        spec = fitToContainer(x.spec, this.clientWidth, this.clientHeight);
-      } else {
-        spec = Object.assign({}, x.spec, {
-          width: "container",
-          height: "container"
-        });
+        return fitToContainer(spec, size.width, size.height);
       }
 
+      return Object.assign({}, spec, {
+        width: size.width,
+        height: size.height,
+        autosize: { type: "fit", contains: "padding" }
+      });
+    }
+
+    embedSpec(spec, size) {
+      var self = this;
+      var container = this.createContainer();
       var currentVersion = ++this._renderVersion;
 
       window.vegaEmbed(container, spec, { actions: true })
@@ -123,6 +145,7 @@ HTMLWidgets.widget({
             return;
           }
           self._view = result.view;
+          self.rememberSize(size);
           self.scaleToFit();
         })
         .catch(function(err) {
@@ -133,20 +156,73 @@ HTMLWidgets.widget({
         });
     }
 
-    resize(width, height) {
-      if (this._lastEmbedWidth > 0 && this._lastValue) {
-        var widthChange = Math.abs(this.clientWidth - this._lastEmbedWidth);
-        if (this._isCompound && widthChange > 1) {
-          this.renderValue(this._lastValue);
-          return;
-        }
-        var drift = Math.abs(this.clientWidth - this._lastEmbedWidth) / this._lastEmbedWidth;
-        if (drift > 0.2) {
-          this.renderValue(this._lastValue);
-          return;
-        }
+    updateSimpleView(size) {
+      var self = this;
+      var view = this._view;
+
+      if (
+        !view ||
+        typeof view.width !== "function" ||
+        typeof view.height !== "function" ||
+        typeof view.resize !== "function" ||
+        typeof view.runAsync !== "function"
+      ) {
+        this.renderCurrentValue();
+        return;
       }
-      this.scaleToFit();
+
+      var currentVersion = ++this._renderVersion;
+
+      view
+        .width(size.width)
+        .height(size.height)
+        .resize()
+        .runAsync()
+        .then(function() {
+          if (currentVersion !== self._renderVersion || self._view !== view) {
+            return;
+          }
+          self.rememberSize(size);
+          self.scaleToFit();
+        })
+        .catch(function(err) {
+          if (currentVersion !== self._renderVersion || self._view !== view) {
+            return;
+          }
+          self.textContent = "ggsql render error: " + err;
+        });
+    }
+
+    renderCurrentValue() {
+      if (!this._lastValue) return;
+
+      var size = this.currentSize();
+      var spec = this.buildSpec(this._lastValue.spec, size);
+
+      this.finalize();
+      this.embedSpec(spec, size);
+    }
+
+    renderValue(x) {
+      if (!this._authoredHeight) this._authoredHeight = this.style.height;
+      this._lastValue = x;
+      this._isCompound = isCompound(x.spec);
+      this.renderCurrentValue();
+    }
+
+    resize(width, height) {
+      var size = this.currentSize();
+      if (!this._lastValue || !this.hasMaterialSizeChange(size)) {
+        this.scaleToFit();
+        return;
+      }
+
+      if (this._isCompound || !this._view) {
+        this.renderCurrentValue();
+        return;
+      }
+
+      this.updateSimpleView(size);
     }
   }
 
