@@ -26,14 +26,20 @@ HTMLWidgets.widget({
 
 (function() {
   var MIN_WIDTH = 450;
+  var SCALED_CLASS = "ggsql-viz--scaled";
+
+  function parsePixelHeight(value) {
+    return typeof value === "string" && /px$/.test(value) ? parseFloat(value) : 0;
+  }
 
   class GgsqlViz extends HTMLElement {
     constructor() {
       super();
       this._view = null;
       this._container = null;
-      this._baseHeight = "";
+      this._authoredHeight = "";
       this._isScaled = false;
+      this._isCompound = false;
       this._renderVersion = 0;
       this._lastEmbedWidth = 0;
       this._lastValue = null;
@@ -51,29 +57,41 @@ HTMLWidgets.widget({
       this._container = null;
     }
 
+    setScaledState(scaled) {
+      if (scaled) {
+        this.classList.add(SCALED_CLASS);
+      } else {
+        this.classList.remove(SCALED_CLASS);
+      }
+    }
+
     scaleToFit() {
       var available = this.clientWidth;
       if (!this._container) return;
       if (available < MIN_WIDTH) {
-        if (!this._isScaled) this._baseHeight = this.style.height;
+        this.setScaledState(true);
         var scale = available / MIN_WIDTH;
         this._container.style.transform = "scale(" + scale + ")";
         this._container.style.transformOrigin = "top left";
         this.style.height = (this._container.scrollHeight * scale) + "px";
         this._isScaled = true;
       } else {
+        this.setScaledState(false);
         this._container.style.transform = "";
-        if (this._isScaled) {
-          this.style.height = this._baseHeight;
-          this._isScaled = false;
+        if (this._isCompound) {
+          var minHeight = parsePixelHeight(this._authoredHeight);
+          this.style.height = Math.max(this._container.scrollHeight, minHeight) + "px";
+        } else if (this._isScaled) {
+          this.style.height = this._authoredHeight;
         }
+        this._isScaled = false;
       }
     }
 
     renderValue(x) {
       var self = this;
 
-      if (!this._isScaled) this._baseHeight = this.style.height;
+      if (!this._authoredHeight) this._authoredHeight = this.style.height;
       this.finalize();
 
       this.innerHTML = "";
@@ -86,7 +104,8 @@ HTMLWidgets.widget({
       this._lastEmbedWidth = this.clientWidth;
 
       var spec;
-      if (isCompound(x.spec)) {
+      this._isCompound = isCompound(x.spec);
+      if (this._isCompound) {
         spec = fitToContainer(x.spec, this.clientWidth, this.clientHeight);
       } else {
         spec = Object.assign({}, x.spec, {
@@ -116,6 +135,11 @@ HTMLWidgets.widget({
 
     resize(width, height) {
       if (this._lastEmbedWidth > 0 && this._lastValue) {
+        var widthChange = Math.abs(this.clientWidth - this._lastEmbedWidth);
+        if (this._isCompound && widthChange > 1) {
+          this.renderValue(this._lastValue);
+          return;
+        }
         var drift = Math.abs(this.clientWidth - this._lastEmbedWidth) / this._lastEmbedWidth;
         if (drift > 0.2) {
           this.renderValue(this._lastValue);
@@ -182,7 +206,7 @@ HTMLWidgets.widget({
     }
 
     if ("hconcat" in spec) {
-      var cellW = Math.floor(usableW / spec.hconcat.length);
+      var cellW = Math.floor(usableW / Math.max(spec.hconcat.length, 1));
       return Object.assign({}, spec, {
         hconcat: spec.hconcat.map(function(sub) {
           return Object.assign({}, sub, { width: cellW, height: usableH });
@@ -191,7 +215,7 @@ HTMLWidgets.widget({
     }
 
     if ("vconcat" in spec) {
-      var cellH = Math.floor(usableH / spec.vconcat.length);
+      var cellH = Math.floor(usableH / Math.max(spec.vconcat.length, 1));
       return Object.assign({}, spec, {
         vconcat: spec.vconcat.map(function(sub) {
           return Object.assign({}, sub, { width: usableW, height: cellH });
@@ -201,7 +225,7 @@ HTMLWidgets.widget({
 
     if ("concat" in spec) {
       var ncol = spec.columns || spec.concat.length;
-      var cellW = Math.floor(usableW / ncol);
+      var cellW = Math.floor(usableW / Math.max(ncol, 1));
       return Object.assign({}, spec, {
         concat: spec.concat.map(function(sub) {
           return Object.assign({}, sub, { width: cellW, height: usableH });

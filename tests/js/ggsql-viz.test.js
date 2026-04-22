@@ -24,6 +24,16 @@ function createEnvironment() {
     this.isConnected = true;
     this._innerHTML = "";
     this.textContent = "";
+    this._classes = new Set();
+    this.classList = {
+      add: (...names) => {
+        for (var i = 0; i < names.length; i++) this._classes.add(names[i]);
+      },
+      remove: (...names) => {
+        for (var i = 0; i < names.length; i++) this._classes.delete(names[i]);
+      },
+      contains: (name) => this._classes.has(name)
+    };
   }
 
   MockHTMLElement.prototype.appendChild = function(child) {
@@ -199,4 +209,118 @@ test("finalizes view when widget element is disconnected", async () => {
   w.el.remove();
 
   assert.equal(finalized, true);
+});
+
+test("rerenders compound specs after moderate width changes", async () => {
+  var env = createEnvironment();
+  var calls = [];
+
+  env.setEmbed(function(container, spec) {
+    calls.push(spec);
+    return Promise.resolve({
+      view: {
+        spec: spec,
+        finalize: function() {}
+      }
+    });
+  });
+
+  var w = env.createInstance(900);
+  w.el.clientHeight = 400;
+
+  w.instance.renderValue({
+    spec: {
+      hconcat: [{ mark: "point" }, { mark: "bar" }]
+    }
+  });
+  await flushMicrotasks();
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].hconcat[0].width, 410);
+
+  w.el.clientWidth = 760;
+  w.instance.resize(760, 400);
+  await flushMicrotasks();
+
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].hconcat[0].width, 340);
+  assert.equal(calls[1].hconcat[1].width, 340);
+});
+
+test("grows compound widgets to fit taller embedded content", async () => {
+  var env = createEnvironment();
+
+  env.setEmbed(function(container, spec) {
+    container.scrollHeight = 760;
+    return Promise.resolve({
+      view: {
+        spec: spec,
+        finalize: function() {}
+      }
+    });
+  });
+
+  var w = env.createInstance(900);
+  w.el.clientHeight = 360;
+  w.el.style.height = "360px";
+
+  w.instance.renderValue({
+    spec: {
+      facet: { field: "carb" },
+      columns: 3,
+      spec: { mark: "point" }
+    }
+  });
+  await flushMicrotasks();
+
+  assert.equal(w.el.style.height, "760px");
+});
+
+test("adds a scaled host class below the minimum width", async () => {
+  var env = createEnvironment();
+
+  env.setEmbed(function(container, spec) {
+    container.scrollHeight = 200;
+    return Promise.resolve({
+      view: {
+        spec: spec,
+        finalize: function() {}
+      }
+    });
+  });
+
+  var w = env.createInstance(225);
+  w.el.style.height = "400px";
+
+  w.instance.renderValue({ spec: { mark: "point" } });
+  await flushMicrotasks();
+
+  assert.equal(w.el.classList.contains("ggsql-viz--scaled"), true);
+});
+
+test("removes the scaled host class after returning to normal width", async () => {
+  var env = createEnvironment();
+
+  env.setEmbed(function(container, spec) {
+    container.scrollHeight = 200;
+    return Promise.resolve({
+      view: {
+        spec: spec,
+        finalize: function() {}
+      }
+    });
+  });
+
+  var w = env.createInstance(225);
+  w.el.style.height = "400px";
+
+  w.instance.renderValue({ spec: { mark: "point" } });
+  await flushMicrotasks();
+  assert.equal(w.el.classList.contains("ggsql-viz--scaled"), true);
+
+  w.el.clientWidth = 450;
+  w.instance.resize(450, 400);
+  await flushMicrotasks();
+
+  assert.equal(w.el.classList.contains("ggsql-viz--scaled"), false);
 });

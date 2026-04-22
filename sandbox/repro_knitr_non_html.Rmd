@@ -1,0 +1,10 @@
+```{r setup, include=FALSE}
+library(ggsql)
+```
+
+```{ggsql}
+SELECT *
+FROM r:mtcars
+VISUALISE mpg AS x, disp AS y
+DRAW point
+```

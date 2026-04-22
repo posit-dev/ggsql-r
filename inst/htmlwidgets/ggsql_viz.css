@@ -1,5 +1,9 @@
 ggsql-viz {
   display: block;
+  overflow: visible;
+}
+
+ggsql-viz.ggsql-viz--scaled {
   overflow: hidden;
 }
 
