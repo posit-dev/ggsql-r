@@ -27,10 +27,6 @@ HTMLWidgets.widget({
 (function() {
   var MIN_WIDTH = 450;
 
-  function embedFn() {
-    return window.vegaEmbed || vegaEmbed;
-  }
-
   class GgsqlViz extends HTMLElement {
     constructor() {
       super();
@@ -114,7 +110,7 @@ HTMLWidgets.widget({
 
       var currentVersion = ++this._renderVersion;
 
-      embedFn()(container, spec, { actions: true })
+      window.vegaEmbed(container, spec, { actions: true })
         .then(function(result) {
           if (currentVersion !== self._renderVersion || self._container !== container) {
             result.view.finalize();
