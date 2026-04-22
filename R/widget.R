@@ -20,20 +20,49 @@ ggsql_widget <- function(
     ),
     package = "ggsql"
   )
-  widget$dependencies <- c(
-    widget$dependencies,
-    list(
-      htmltools::htmlDependency(
-        name = "ggsql_viz-styles",
-        version = utils::packageVersion("ggsql"),
-        src = "htmlwidgets",
-        package = "ggsql",
-        stylesheet = "ggsql_viz.css",
-        all_files = FALSE
-      )
+  widget$dependencies <- c(widget$dependencies, vegalite_dependencies())
+  widget
+}
+
+vegalite_dependencies <- function() {
+  list(
+    htmltools::htmlDependency(
+      name = "vega",
+      version = "6.2.0",
+      src = "htmlwidgets/lib/vega",
+      package = "ggsql",
+      script = "vega.min.js"
+    ),
+    htmltools::htmlDependency(
+      name = "vega-lite",
+      version = "6.4.2",
+      src = "htmlwidgets/lib/vega-lite",
+      package = "ggsql",
+      script = "vega-lite.min.js"
+    ),
+    htmltools::htmlDependency(
+      name = "vega-embed",
+      version = "7.1.0",
+      src = "htmlwidgets/lib/vega-embed",
+      package = "ggsql",
+      script = "vega-embed.min.js"
+    ),
+    htmltools::htmlDependency(
+      name = "ggsql-viz-sizing",
+      version = "0.1.0",
+      src = "htmlwidgets",
+      package = "ggsql",
+      script = "ggsql_viz_sizing.js"
+    ),
+    htmltools::htmlDependency(
+      name = "ggsql-viz-styles",
+      version = utils::packageVersion("ggsql"),
+      src = "htmlwidgets",
+      package = "ggsql",
+      stylesheet = "ggsql_viz.css",
+      all_files = FALSE
     )
   )
-  widget
 }
 
 #' @noRd
