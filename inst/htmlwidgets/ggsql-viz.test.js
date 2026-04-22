@@ -106,7 +106,7 @@ function createEnvironment() {
   };
   context.window = context;
 
-  var scriptPath = path.join(__dirname, "..", "..", "inst", "htmlwidgets", "ggsql_viz.js");
+  var scriptPath = path.join(__dirname, "ggsql_viz.js");
   var source = fs.readFileSync(scriptPath, "utf8");
   vm.runInNewContext(source, context, { filename: scriptPath });
 
@@ -387,6 +387,86 @@ test("rerenders compound specs after height changes", async () => {
 
   assert.equal(calls.length, 1);
   assert.equal(calls[0].spec.height, 280);
+
+  w.el.clientHeight = 520;
+  w.instance.resize(900, 520);
+  await flushMicrotasks();
+
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].spec.height, 400);
+});
+
+test("rerenders compound specs using the base host height after self-expansion", async () => {
+  var env = createEnvironment();
+  var calls = [];
+
+  env.setEmbed(function(container, spec) {
+    calls.push(spec);
+    container.scrollHeight = calls.length === 1 ? 760 : 900;
+    return Promise.resolve({
+      view: {
+        spec: spec,
+        finalize: function() {}
+      }
+    });
+  });
+
+  var w = env.createInstance(900);
+  w.el.clientHeight = 360;
+  w.el.style.height = "360px";
+
+  w.instance.renderValue({
+    spec: {
+      facet: { field: "carb" },
+      columns: 3,
+      spec: { mark: "point" }
+    }
+  });
+  await flushMicrotasks();
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].spec.height, 240);
+  assert.equal(w.el.style.height, "760px");
+
+  w.el.clientWidth = 760;
+  w.el.clientHeight = 760;
+  w.instance.resize(760, 760);
+  await flushMicrotasks();
+
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].spec.height, 240);
+});
+
+test("rerenders compound specs using a new base height after a real host height change", async () => {
+  var env = createEnvironment();
+  var calls = [];
+
+  env.setEmbed(function(container, spec) {
+    calls.push(spec);
+    container.scrollHeight = 760;
+    return Promise.resolve({
+      view: {
+        spec: spec,
+        finalize: function() {}
+      }
+    });
+  });
+
+  var w = env.createInstance(900);
+  w.el.clientHeight = 360;
+  w.el.style.height = "360px";
+
+  w.instance.renderValue({
+    spec: {
+      facet: { field: "carb" },
+      columns: 3,
+      spec: { mark: "point" }
+    }
+  });
+  await flushMicrotasks();
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].spec.height, 240);
 
   w.el.clientHeight = 520;
   w.instance.resize(900, 520);

@@ -37,7 +37,8 @@ HTMLWidgets.widget({
       super();
       this._view = null;
       this._container = null;
-      this._authoredHeight = "";
+      this._initialHeight = "";
+      this._layoutHeight = 0;
       this._isScaled = false;
       this._isCompound = false;
       this._renderVersion = 0;
@@ -66,6 +67,21 @@ HTMLWidgets.widget({
       }
     }
 
+    setHostHeight(value) {
+      this.style.height = value;
+    }
+
+    syncLayoutHeight(heightHint) {
+      if (typeof heightHint === "number" && heightHint > 0) {
+        this._layoutHeight = heightHint;
+        return;
+      }
+
+      if (!this._layoutHeight) {
+        this._layoutHeight = parsePixelHeight(this._initialHeight) || this.clientHeight;
+      }
+    }
+
     scaleToFit() {
       var available = this.clientWidth;
       if (!this._container) return;
@@ -74,25 +90,27 @@ HTMLWidgets.widget({
         var scale = available / MIN_WIDTH;
         this._container.style.transform = "scale(" + scale + ")";
         this._container.style.transformOrigin = "top left";
-        this.style.height = (this._container.scrollHeight * scale) + "px";
+        this.setHostHeight((this._container.scrollHeight * scale) + "px");
         this._isScaled = true;
       } else {
         this.setScaledState(false);
         this._container.style.transform = "";
         if (this._isCompound) {
-          var minHeight = parsePixelHeight(this._authoredHeight);
-          this.style.height = Math.max(this._container.scrollHeight, minHeight) + "px";
+          this.setHostHeight(Math.max(this._container.scrollHeight, this._layoutHeight) + "px");
         } else if (this._isScaled) {
-          this.style.height = this._authoredHeight;
+          this.setHostHeight(this._initialHeight);
         }
         this._isScaled = false;
       }
     }
 
-    currentSize() {
+    currentSize(heightHint) {
+      if (this._isCompound) {
+        this.syncLayoutHeight(heightHint);
+      }
       return {
         width: this.clientWidth,
-        height: this.clientHeight
+        height: this._isCompound ? this._layoutHeight : this.clientHeight
       };
     }
 
@@ -193,10 +211,10 @@ HTMLWidgets.widget({
         });
     }
 
-    renderCurrentValue() {
+    renderCurrentValue(heightHint) {
       if (!this._lastValue) return;
 
-      var size = this.currentSize();
+      var size = this.currentSize(heightHint);
       var spec = this.buildSpec(this._lastValue.spec, size);
 
       this.finalize();
@@ -204,21 +222,24 @@ HTMLWidgets.widget({
     }
 
     renderValue(x) {
-      if (!this._authoredHeight) this._authoredHeight = this.style.height;
+      if (!this._initialHeight) this._initialHeight = this.style.height;
       this._lastValue = x;
       this._isCompound = isCompound(x.spec);
+      if (this._isCompound) {
+        this.syncLayoutHeight();
+      }
       this.renderCurrentValue();
     }
 
     resize(width, height) {
-      var size = this.currentSize();
+      var size = this.currentSize(height);
       if (!this._lastValue || !this.hasMaterialSizeChange(size)) {
         this.scaleToFit();
         return;
       }
 
       if (this._isCompound || !this._view) {
-        this.renderCurrentValue();
+        this.renderCurrentValue(height);
         return;
       }
 

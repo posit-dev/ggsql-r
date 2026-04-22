@@ -19,7 +19,7 @@ function loadSizing() {
   context.window = context;
   context.document = { createElement: function() { return new context.HTMLElement(); } };
 
-  var scriptPath = path.join(__dirname, "..", "..", "inst", "htmlwidgets", "ggsql_viz.js");
+  var scriptPath = path.join(__dirname, "ggsql_viz.js");
   var source = fs.readFileSync(scriptPath, "utf8");
   vm.runInNewContext(source, context, { filename: scriptPath });
 
