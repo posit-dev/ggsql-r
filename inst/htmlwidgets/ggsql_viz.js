@@ -78,17 +78,13 @@ HTMLWidgets.widget({
       if (!this._isScaled) this._baseHeight = this.style.height;
       this.finalize();
 
-      this.style.display = "block";
-      this.style.overflow = "hidden";
-      this.style.marginLeft = "";
-      this.style.marginRight = "";
+      this.classList.remove("ggsql-align-center", "ggsql-align-right");
       this.style.aspectRatio = "";
 
       if (x.align === "center") {
-        this.style.marginLeft = "auto";
-        this.style.marginRight = "auto";
+        this.classList.add("ggsql-align-center");
       } else if (x.align === "right") {
-        this.style.marginLeft = "auto";
+        this.classList.add("ggsql-align-right");
       }
 
       if (x.asp) {
@@ -99,7 +95,6 @@ HTMLWidgets.widget({
       this.innerHTML = "";
       if (x.caption) {
         var figure = document.createElement("figure");
-        figure.style.margin = "0";
         var figcaption = document.createElement("figcaption");
         figcaption.textContent = x.caption;
         this.appendChild(figure);
@@ -108,9 +103,7 @@ HTMLWidgets.widget({
       }
 
       var container = document.createElement("div");
-      container.style.minWidth = MIN_WIDTH + "px";
-      container.style.width = "100%";
-      container.style.height = "100%";
+      container.className = "ggsql-container";
       wrapper.insertBefore(container, wrapper.firstChild);
       this._container = container;
 

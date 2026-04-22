@@ -1,0 +1,24 @@
+ggsql-viz {
+  display: block;
+  overflow: hidden;
+}
+
+ggsql-viz > .ggsql-container,
+ggsql-viz > figure > .ggsql-container {
+  min-width: 450px;
+  width: 100%;
+  height: 100%;
+}
+
+ggsql-viz > figure {
+  margin: 0;
+}
+
+ggsql-viz.ggsql-align-center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+ggsql-viz.ggsql-align-right {
+  margin-left: auto;
+}

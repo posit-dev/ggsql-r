@@ -1,3 +1,4 @@
+stylesheet: ggsql_viz.css
 dependencies:
   - name: vega
     version: "6.2.0"
