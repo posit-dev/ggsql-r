@@ -115,11 +115,12 @@ function createEnvironment() {
   assert.ok(definedElements.get("ggsql-viz"), "custom element should be registered");
 
   return {
-    createInstance: function(clientWidth) {
+    createInstance: function(clientWidth, clientHeight) {
       var Ctor = definedElements.get("ggsql-viz");
       var el = new Ctor();
       el.clientWidth = clientWidth || 450;
-      var instance = capturedDef.factory(el, el.clientWidth, 400);
+      el.clientHeight = clientHeight || 400;
+      var instance = capturedDef.factory(el, el.clientWidth, el.clientHeight);
       return { el: el, instance: instance };
     },
     setEmbed: function(impl) {
@@ -133,7 +134,7 @@ async function flushMicrotasks() {
   await Promise.resolve();
 }
 
-test("restores authored height after rerendering while scaled down", async () => {
+test("keeps the layout height while rendering a scaled simple spec", async () => {
   var env = createEnvironment();
   env.setEmbed(function(container, spec) {
     container.scrollHeight = 200;
@@ -147,11 +148,11 @@ test("restores authored height after rerendering while scaled down", async () =>
 
   w.instance.renderValue({ spec: { name: "first" } });
   await flushMicrotasks();
-  assert.equal(w.el.style.height, "100px"); // 200 * (225/450) = 100
+  assert.equal(w.el.style.height, "400px");
 
   w.instance.renderValue({ spec: { name: "second" } });
   await flushMicrotasks();
-  assert.equal(w.el.style.height, "100px");
+  assert.equal(w.el.style.height, "400px");
 
   w.el.clientWidth = 450;
   w.instance.resize(450, 400);
@@ -261,8 +262,7 @@ test("passes explicit dimensions and fit autosize for simple specs", async () =>
     });
   });
 
-  var w = env.createInstance(600);
-  w.el.clientHeight = 320;
+  var w = env.createInstance(600, 320);
 
   w.instance.renderValue({
     spec: { mark: "point" }
@@ -312,8 +312,7 @@ test("updates simple specs in-place on resize without re-embedding", async () =>
     });
   });
 
-  var w = env.createInstance(600);
-  w.el.clientHeight = 320;
+  var w = env.createInstance(600, 320);
 
   w.instance.renderValue({ spec: { mark: "point" } });
   await flushMicrotasks();
@@ -343,8 +342,7 @@ test("grows compound widgets to fit taller embedded content", async () => {
     });
   });
 
-  var w = env.createInstance(900);
-  w.el.clientHeight = 360;
+  var w = env.createInstance(900, 360);
   w.el.style.height = "360px";
 
   w.instance.renderValue({
@@ -373,8 +371,7 @@ test("rerenders compound specs after height changes", async () => {
     });
   });
 
-  var w = env.createInstance(900);
-  w.el.clientHeight = 400;
+  var w = env.createInstance(900, 400);
 
   w.instance.renderValue({
     spec: {
@@ -396,7 +393,7 @@ test("rerenders compound specs after height changes", async () => {
   assert.equal(calls[1].spec.height, 400);
 });
 
-test("rerenders compound specs using the base host height after self-expansion", async () => {
+test("rerenders compound specs using the real resize height after self-expansion", async () => {
   var env = createEnvironment();
   var calls = [];
 
@@ -411,8 +408,7 @@ test("rerenders compound specs using the base host height after self-expansion",
     });
   });
 
-  var w = env.createInstance(900);
-  w.el.clientHeight = 360;
+  var w = env.createInstance(900, 360);
   w.el.style.height = "360px";
 
   w.instance.renderValue({
@@ -430,7 +426,7 @@ test("rerenders compound specs using the base host height after self-expansion",
 
   w.el.clientWidth = 760;
   w.el.clientHeight = 760;
-  w.instance.resize(760, 760);
+  w.instance.resize(760, 360);
   await flushMicrotasks();
 
   assert.equal(calls.length, 2);
@@ -452,8 +448,7 @@ test("rerenders compound specs using a new base height after a real host height 
     });
   });
 
-  var w = env.createInstance(900);
-  w.el.clientHeight = 360;
+  var w = env.createInstance(900, 360);
   w.el.style.height = "360px";
 
   w.instance.renderValue({

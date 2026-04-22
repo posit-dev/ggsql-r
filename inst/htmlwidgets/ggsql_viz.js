@@ -3,6 +3,7 @@ HTMLWidgets.widget({
   type: "output",
 
   factory: function(el, width, height) {
+    el.initializeLayout(width, height);
     return {
       renderValue: function(x) {
         el.renderValue(x);
@@ -32,12 +33,22 @@ HTMLWidgets.widget({
     return typeof value === "string" && /px$/.test(value) ? parseFloat(value) : 0;
   }
 
+  function normalizeLayoutWidth(value, fallback) {
+    return typeof value === "number" && value > 0 ? value : fallback;
+  }
+
+  function normalizeLayoutHeight(value, fallback) {
+    if (typeof value === "number" && value > 0) return value;
+    if (typeof value === "string" && /px$/.test(value)) return parseFloat(value);
+    return fallback;
+  }
+
   class GgsqlViz extends HTMLElement {
     constructor() {
       super();
       this._view = null;
       this._container = null;
-      this._initialHeight = "";
+      this._layoutWidth = 0;
       this._layoutHeight = 0;
       this._isScaled = false;
       this._isCompound = false;
@@ -67,30 +78,44 @@ HTMLWidgets.widget({
       }
     }
 
+    initializeLayout(width, height) {
+      this._layoutWidth = normalizeLayoutWidth(width, this.clientWidth);
+      this._layoutHeight = normalizeLayoutHeight(
+        height,
+        parsePixelHeight(this.style.height) || this.clientHeight
+      );
+    }
+
     setHostHeight(value) {
       this.style.height = value;
     }
 
-    syncLayoutHeight(heightHint) {
-      if (typeof heightHint === "number" && heightHint > 0) {
-        this._layoutHeight = heightHint;
-        return;
-      }
+    updateLayout(width, height) {
+      this._layoutWidth = normalizeLayoutWidth(width, this._layoutWidth || this.clientWidth);
+      this._layoutHeight = normalizeLayoutHeight(
+        height,
+        this._layoutHeight || parsePixelHeight(this.style.height) || this.clientHeight
+      );
+    }
 
-      if (!this._layoutHeight) {
-        this._layoutHeight = parsePixelHeight(this._initialHeight) || this.clientHeight;
-      }
+    layoutSize() {
+      return {
+        width: this._layoutWidth || this.clientWidth,
+        height: this._layoutHeight || parsePixelHeight(this.style.height) || this.clientHeight
+      };
     }
 
     scaleToFit() {
-      var available = this.clientWidth;
+      var available = this._layoutWidth || this.clientWidth;
       if (!this._container) return;
       if (available < MIN_WIDTH) {
         this.setScaledState(true);
         var scale = available / MIN_WIDTH;
         this._container.style.transform = "scale(" + scale + ")";
         this._container.style.transformOrigin = "top left";
-        this.setHostHeight((this._container.scrollHeight * scale) + "px");
+        this.setHostHeight(
+          Math.max(this._layoutHeight, this._container.scrollHeight * scale) + "px"
+        );
         this._isScaled = true;
       } else {
         this.setScaledState(false);
@@ -98,20 +123,10 @@ HTMLWidgets.widget({
         if (this._isCompound) {
           this.setHostHeight(Math.max(this._container.scrollHeight, this._layoutHeight) + "px");
         } else if (this._isScaled) {
-          this.setHostHeight(this._initialHeight);
+          this.setHostHeight(this._layoutHeight + "px");
         }
         this._isScaled = false;
       }
-    }
-
-    currentSize(heightHint) {
-      if (this._isCompound) {
-        this.syncLayoutHeight(heightHint);
-      }
-      return {
-        width: this.clientWidth,
-        height: this._isCompound ? this._layoutHeight : this.clientHeight
-      };
     }
 
     createContainer() {
@@ -211,10 +226,10 @@ HTMLWidgets.widget({
         });
     }
 
-    renderCurrentValue(heightHint) {
+    renderCurrentValue() {
       if (!this._lastValue) return;
 
-      var size = this.currentSize(heightHint);
+      var size = this.layoutSize();
       var spec = this.buildSpec(this._lastValue.spec, size);
 
       this.finalize();
@@ -222,24 +237,24 @@ HTMLWidgets.widget({
     }
 
     renderValue(x) {
-      if (!this._initialHeight) this._initialHeight = this.style.height;
+      var styledHeight = parsePixelHeight(this.style.height);
+      this._layoutWidth = this._layoutWidth || this.clientWidth;
+      this._layoutHeight = styledHeight || this._layoutHeight || this.clientHeight;
       this._lastValue = x;
       this._isCompound = isCompound(x.spec);
-      if (this._isCompound) {
-        this.syncLayoutHeight();
-      }
       this.renderCurrentValue();
     }
 
     resize(width, height) {
-      var size = this.currentSize(height);
+      this.updateLayout(width, height);
+      var size = this.layoutSize();
       if (!this._lastValue || !this.hasMaterialSizeChange(size)) {
         this.scaleToFit();
         return;
       }
 
       if (this._isCompound || !this._view) {
-        this.renderCurrentValue(height);
+        this.renderCurrentValue();
         return;
       }
 
