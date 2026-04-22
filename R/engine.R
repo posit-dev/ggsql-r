@@ -316,27 +316,16 @@ ggsql_engine_eval <- function(query, reader, options) {
   switch(
     writer_type,
     vegalite = {
+      if (!is.null(options$fig.cap) && nzchar(options$fig.cap)) {
+        cli::cli_warn(c(
+          "{.code fig.cap} is not supported for interactive HTML output.",
+          i = "Use {.code writer = \"vegalite_svg\"} or {.code writer = \"vegalite_png\"} for captioned figures."
+        ))
+      }
       writer <- vegalite_writer()
       json <- ggsql_render(writer, spec)
-      if (is.null(options$fig.dim)) {
-        width <- inches_to_px(options$fig.width)
-        height <- inches_to_px(options$fig.height)
-        asp <- options$fig.asp
-      } else {
-        width <- inches_to_px(options$fig.dim[1])
-        height <- inches_to_px(options$fig.dim[2])
-        asp <- NULL
-      }
-      widget <- ggsql_widget(
-        json,
-        width = width,
-        height = height,
-        asp = asp,
-        caption = options$fig.cap,
-        align = options$fig.align
-      )
-      html <- htmltools::as.tags(widget, standalone = FALSE)
-      out <- knitr::knit_print(html)
+      widget <- ggsql_widget(json)
+      out <- knitr::knit_print(widget, options = options)
       knitr::knit_meta_add(attr(out, "knit_meta"))
       knitr::engine_output(options, options$code, out = out)
     },
@@ -381,10 +370,6 @@ write_static_figure <- function(spec, format, options) {
 render_static_figure <- function(spec, format, options) {
   out <- write_static_figure(spec, format, options)
   knitr::engine_output(options, options$code, knitr::sew(out, options))
-}
-
-inches_to_px <- function(x) {
-  if (is.numeric(x)) paste0(round(x * 96), "px") else x
 }
 
 on_load(

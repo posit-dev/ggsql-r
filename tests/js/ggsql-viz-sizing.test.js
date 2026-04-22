@@ -66,6 +66,15 @@ test("hasLegend finds legends inside layer arrays", function() {
   assert.equal(sizing.hasLegend(spec), true);
 });
 
+test("hasLegend finds legend inside facet inner spec", function() {
+  var sizing = loadSizing();
+  var spec = {
+    facet: { field: "x" },
+    spec: { mark: "point", encoding: { color: { field: "c" } } }
+  };
+  assert.equal(sizing.hasLegend(spec), true);
+});
+
 // --- fitToContainer ---
 
 // padding_x = 80, padding_y = 120, LEGEND_WIDTH = 120
@@ -76,10 +85,9 @@ test("fitToContainer facet with columns=2 at 900x500", function() {
   var sizing = loadSizing();
   var spec = { facet: { field: "x" }, spec: { mark: "point" }, columns: 2 };
   var result = sizing.fitToContainer(spec, 900, 500);
-  // usable_w=820, ncol=2, cell_w=floor(820/2)=410
-  // usable_h=380, height set on spec
-  assert.equal(result.width, 410);
-  assert.equal(result.height, 380);
+  // usable_w=820, ncol=2, cell_w=floor(820/2)=410; usable_h=380
+  assert.equal(result.spec.width, 410);
+  assert.equal(result.spec.height, 380);
 });
 
 test("fitToContainer hconcat with 2 sub-specs at 900x500", function() {
@@ -124,6 +132,14 @@ test("fitToContainer concat defaults columns to item count when not specified", 
   assert.equal(result.concat[1].width, 410);
 });
 
+test("fitToContainer concat sets height on sub-specs", function() {
+  var sizing = loadSizing();
+  var spec = { concat: [{ mark: "point" }, { mark: "bar" }] };
+  var result = sizing.fitToContainer(spec, 900, 500);
+  assert.equal(result.concat[0].height, 380);
+  assert.equal(result.concat[1].height, 380);
+});
+
 test("fitToContainer adds legend padding for color legend on hconcat at 900x500", function() {
   var sizing = loadSizing();
   var spec = {
@@ -133,24 +149,7 @@ test("fitToContainer adds legend padding for color legend on hconcat at 900x500"
     ]
   };
   var result = sizing.fitToContainer(spec, 900, 500);
-  // legend detected: padding_x = 80 + 120 = 200
-  // usable_w = max(900 - 200, 100) = 700
-  // n=2, cell_w=floor(700/2)=350... wait, test says width=700?
-  // Re-reading: "width = 700" — so the test checks usable_w itself? Let me re-check the spec:
-  // "fitToContainer adds legend padding (900x500 with color legend on hconcat): width = 700"
-  // This likely means each sub gets width=350. But the spec says "width = 700".
-  // The spec says usable_w=700, and for hconcat n=2 → cell_w=floor(700/2)=350.
-  // But the test description says "width = 700". Let me interpret this as checking
-  // that usable_w is 700 (i.e., the result has correct cell widths based on 700 usable width).
-  // Actually looking more carefully: the test says width = 700 for the hconcat case.
-  // With legend: padding_x=200, usable_w=max(900-200,100)=700, n=2, cell_w=floor(700/2)=350
-  // So each sub gets width=350. But the description says "width = 700".
-  // I'll interpret "width = 700" as each sub's width being 350 (floor(700/2))
-  // since that's what makes mathematical sense. Wait - let me re-read:
-  // "fitToContainer adds legend padding (900x500 with color legend on hconcat): width = 700"
-  // Maybe it's testing that the first sub's width is 350? Or maybe it's a single-sub test?
-  // The spec says hconcat with color legend. With 2 subs and usable_w=700, cell_w=350.
-  // I'll check width=350 for each sub.
+  // padding_x = 80 + 120 (legend) = 200, usable_w = 700, n=2, cell_w = 350
   assert.equal(result.hconcat[0].width, 350);
   assert.equal(result.hconcat[1].width, 350);
 });

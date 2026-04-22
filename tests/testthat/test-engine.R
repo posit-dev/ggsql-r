@@ -1,6 +1,7 @@
 run_query <- function(query, ...) {
   opts <- knitr::opts_current$get()
   opts$code <- query
+  opts$screenshot.force <- FALSE
   extra_opts <- list(...)
   if (length(extra_opts) > 0) {
     opts[names(extra_opts)] <- extra_opts
@@ -304,6 +305,9 @@ test_that("we can knit a mixed-chunk document", {
 
   out_file <- file.path(dir, "test_chunks.md")
 
+  withr::local_options(list(knitr.in.progress = TRUE))
+  knitr::opts_knit$set(rmarkdown.pandoc.to = "html")
+  withr::defer(knitr::opts_knit$set(rmarkdown.pandoc.to = NULL))
   out <- knitr::knit(input = in_file, output = out_file, quiet = TRUE)
   expect_equal(out_file, out)
   expect_true(file.exists(out))

@@ -39,23 +39,8 @@ knit_print.Spec <- function(x, ..., inline = FALSE) {
     writer_type,
     vegalite = {
       json <- ggsql_render(vegalite_writer(), x)
-      if (is.null(options$fig.dim)) {
-        width <- inches_to_px(options$fig.width)
-        height <- inches_to_px(options$fig.height)
-        asp <- options$fig.asp
-      } else {
-        width <- inches_to_px(options$fig.dim[1])
-        height <- inches_to_px(options$fig.dim[2])
-        asp <- NULL
-      }
-      widget <- ggsql_widget(
-        json,
-        width = width,
-        height = height,
-        asp = asp
-      )
-      html <- htmltools::as.tags(widget, standalone = FALSE)
-      knitr::knit_print(html)
+      widget <- ggsql_widget(json)
+      knitr::knit_print(widget, options = options)
     },
     vegalite_svg = ,
     vegalite_png = {

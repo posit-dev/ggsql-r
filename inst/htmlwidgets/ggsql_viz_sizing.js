@@ -14,10 +14,13 @@
   }
 
   function _specsForLegendSearch(spec) {
-    if ("hconcat" in spec) return spec.hconcat;
-    if ("vconcat" in spec) return spec.vconcat;
-    if ("concat" in spec) return spec.concat;
-    return [spec];
+    var specs = [];
+    if (spec.spec) specs.push(spec.spec);
+    if (Array.isArray(spec.hconcat)) specs = specs.concat(spec.hconcat);
+    if (Array.isArray(spec.vconcat)) specs = specs.concat(spec.vconcat);
+    if (Array.isArray(spec.concat)) specs = specs.concat(spec.concat);
+    if (specs.length === 0) specs.push(spec);
+    return specs;
   }
 
   function _specHasLegend(s) {
@@ -57,9 +60,9 @@
     if ("facet" in spec) {
       var ncol = spec.columns || 1;
       var cellW = Math.floor(usableW / ncol);
-      var result = Object.assign({}, spec);
-      result.width = cellW;
-      result.height = usableH;
+      var result = Object.assign({}, spec, {
+        spec: Object.assign({}, spec.spec, { width: cellW, height: usableH })
+      });
       return result;
     }
 
@@ -89,7 +92,7 @@
       var cellW = Math.floor(usableW / ncol);
       var result = Object.assign({}, spec);
       result.concat = spec.concat.map(function(sub) {
-        return Object.assign({}, sub, { width: cellW });
+        return Object.assign({}, sub, { width: cellW, height: usableH });
       });
       return result;
     }

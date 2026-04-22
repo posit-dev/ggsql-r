@@ -35,6 +35,9 @@ HTMLWidgets.widget({
       this._baseHeight = "";
       this._isScaled = false;
       this._renderVersion = 0;
+      this._lastEmbedWidth = 0;
+      this._isCompound = false;
+      this._lastValue = null;
     }
 
     disconnectedCallback() {
@@ -74,39 +77,23 @@ HTMLWidgets.widget({
       if (!this._isScaled) this._baseHeight = this.style.height;
       this.finalize();
 
-      this.classList.remove("ggsql-align-center", "ggsql-align-right");
-      this.style.aspectRatio = "";
-
-      if (x.align === "center") {
-        this.classList.add("ggsql-align-center");
-      } else if (x.align === "right") {
-        this.classList.add("ggsql-align-right");
-      }
-
-      if (x.asp) {
-        this.style.aspectRatio = x.asp;
-      }
-
-      var wrapper = this;
       this.innerHTML = "";
-      if (x.caption) {
-        var figure = document.createElement("figure");
-        var figcaption = document.createElement("figcaption");
-        figcaption.textContent = x.caption;
-        this.appendChild(figure);
-        figure.appendChild(figcaption);
-        wrapper = figure;
-      }
 
       var container = document.createElement("div");
       container.className = "ggsql-container";
-      wrapper.insertBefore(container, wrapper.firstChild);
+      this.appendChild(container);
       this._container = container;
+      this._lastValue = x;
 
-      var spec = Object.assign({}, x.spec, {
-        width: "container",
-        height: "container"
-      });
+      var compound = GgsqlSizing.isCompound(x.spec);
+      this._isCompound = compound;
+      var spec;
+      if (compound) {
+        spec = GgsqlSizing.fitToContainer(x.spec, this.clientWidth, this.clientHeight);
+        this._lastEmbedWidth = this.clientWidth;
+      } else {
+        spec = Object.assign({}, x.spec, { width: "container", height: "container" });
+      }
 
       var currentVersion = ++this._renderVersion;
 
@@ -128,6 +115,13 @@ HTMLWidgets.widget({
     }
 
     resize(width, height) {
+      if (this._isCompound && this._lastEmbedWidth > 0 && this._lastValue) {
+        var drift = Math.abs(this.clientWidth - this._lastEmbedWidth) / this._lastEmbedWidth;
+        if (drift > 0.2) {
+          this.renderValue(this._lastValue);
+          return;
+        }
+      }
       this.scaleToFit();
     }
   }
