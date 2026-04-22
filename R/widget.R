@@ -20,11 +20,15 @@ ggsql_widget <- function(
     ),
     package = "ggsql"
   )
-  widget$dependencies <- c(widget$dependencies, vegalite_dependencies())
+  widget$dependencies <- c(
+    widget$dependencies,
+    vega_dependencies(),
+    widget_dependencies()
+  )
   widget
 }
 
-vegalite_dependencies <- function() {
+vega_dependencies <- function() {
   list(
     htmltools::htmlDependency(
       name = "vega",
@@ -46,7 +50,12 @@ vegalite_dependencies <- function() {
       src = "htmlwidgets/lib/vega-embed",
       package = "ggsql",
       script = "vega-embed.min.js"
-    ),
+    )
+  )
+}
+
+widget_dependencies <- function() {
+  list(
     htmltools::htmlDependency(
       name = "ggsql-viz-sizing",
       version = "0.1.0",
