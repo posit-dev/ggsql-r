@@ -3,8 +3,7 @@ ggsql-viz {
   overflow: hidden;
 }
 
-ggsql-viz > .ggsql-container,
-ggsql-viz > figure > .ggsql-container {
+ggsql-viz .ggsql-container {
   min-width: 450px;
   width: 100%;
   height: 100%;
