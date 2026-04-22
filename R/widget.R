@@ -57,13 +57,6 @@ vega_dependencies <- function() {
 widget_dependencies <- function() {
   list(
     htmltools::htmlDependency(
-      name = "ggsql-viz-sizing",
-      version = "0.1.0",
-      src = "htmlwidgets",
-      package = "ggsql",
-      script = "ggsql_viz_sizing.js"
-    ),
-    htmltools::htmlDependency(
       name = "ggsql-viz-styles",
       version = utils::packageVersion("ggsql"),
       src = "htmlwidgets",

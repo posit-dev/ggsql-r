@@ -5,15 +5,26 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 function loadSizing() {
-  var context = { console: console };
+  var context = {
+    console: console,
+    HTMLElement: function() {},
+    customElements: {
+      define: function() {},
+      get: function() {}
+    },
+    HTMLWidgets: { widget: function() {} },
+    Promise: Promise,
+    module: { exports: {} }
+  };
   context.window = context;
+  context.document = { createElement: function() { return new context.HTMLElement(); } };
 
-  var scriptPath = path.join(__dirname, "..", "..", "inst", "htmlwidgets", "ggsql_viz_sizing.js");
+  var scriptPath = path.join(__dirname, "..", "..", "inst", "htmlwidgets", "ggsql_viz.js");
   var source = fs.readFileSync(scriptPath, "utf8");
   vm.runInNewContext(source, context, { filename: scriptPath });
 
-  assert.ok(context.GgsqlSizing, "GgsqlSizing should be defined on window");
-  return context.GgsqlSizing;
+  assert.ok(context.module.exports.isCompound, "sizing helpers should be exported via module.exports");
+  return context.module.exports;
 }
 
 // --- isCompound ---
