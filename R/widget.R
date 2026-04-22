@@ -27,3 +27,16 @@ ggsql_widget <- function(
     package = "ggsql"
   )
 }
+
+#' @noRd
+widget_html.ggsql_viz <- function(
+  name,
+  package,
+  id,
+  style,
+  class,
+  inline = FALSE,
+  ...
+) {
+  htmltools::tag("ggsql-viz", list(id = id, style = style, class = class))
+}
