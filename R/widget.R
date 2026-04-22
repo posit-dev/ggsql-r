@@ -20,16 +20,19 @@ ggsql_widget <- function(
     ),
     package = "ggsql"
   )
-  widget$dependencies <- c(widget$dependencies, list(
-    htmltools::htmlDependency(
-      name = "ggsql_viz-styles",
-      version = utils::packageVersion("ggsql"),
-      src = "htmlwidgets",
-      package = "ggsql",
-      stylesheet = "ggsql_viz.css",
-      all_files = FALSE
+  widget$dependencies <- c(
+    widget$dependencies,
+    list(
+      htmltools::htmlDependency(
+        name = "ggsql_viz-styles",
+        version = utils::packageVersion("ggsql"),
+        src = "htmlwidgets",
+        package = "ggsql",
+        stylesheet = "ggsql_viz.css",
+        all_files = FALSE
+      )
     )
-  ))
+  )
   widget
 }
 
