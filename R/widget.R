@@ -46,5 +46,9 @@ widget_html.ggsql_viz <- function(
   inline = FALSE,
   ...
 ) {
-  htmltools::tag("ggsql-viz", list(id = id, style = style, class = class))
+  htmltools::tag("ggsql-viz", list(
+    id = id,
+    style = paste0("display:block;", style),
+    class = class
+  ))
 }

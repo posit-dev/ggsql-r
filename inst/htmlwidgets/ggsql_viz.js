@@ -36,7 +36,6 @@ HTMLWidgets.widget({
       this._isScaled = false;
       this._renderVersion = 0;
       this._lastEmbedWidth = 0;
-      this._isCompound = false;
       this._lastValue = null;
     }
 
@@ -71,6 +70,17 @@ HTMLWidgets.widget({
       }
     }
 
+    _buildSpec(x) {
+      if (GgsqlSizing.isCompound(x.spec)) {
+        return GgsqlSizing.fitToContainer(x.spec, this.clientWidth, this.clientHeight);
+      }
+      return Object.assign({}, x.spec, {
+        width: this.clientWidth,
+        height: this.clientHeight,
+        autosize: { type: "fit", contains: "padding" }
+      });
+    }
+
     renderValue(x) {
       var self = this;
 
@@ -84,17 +94,9 @@ HTMLWidgets.widget({
       this.appendChild(container);
       this._container = container;
       this._lastValue = x;
+      this._lastEmbedWidth = this.clientWidth;
 
-      var compound = GgsqlSizing.isCompound(x.spec);
-      this._isCompound = compound;
-      var spec;
-      if (compound) {
-        spec = GgsqlSizing.fitToContainer(x.spec, this.clientWidth, this.clientHeight);
-        this._lastEmbedWidth = this.clientWidth;
-      } else {
-        spec = Object.assign({}, x.spec, { width: "container", height: "container" });
-      }
-
+      var spec = this._buildSpec(x);
       var currentVersion = ++this._renderVersion;
 
       window.vegaEmbed(container, spec, { actions: true })
@@ -115,7 +117,7 @@ HTMLWidgets.widget({
     }
 
     resize(width, height) {
-      if (this._isCompound && this._lastEmbedWidth > 0 && this._lastValue) {
+      if (this._lastEmbedWidth > 0 && this._lastValue) {
         var drift = Math.abs(this.clientWidth - this._lastEmbedWidth) / this._lastEmbedWidth;
         if (drift > 0.2) {
           this.renderValue(this._lastValue);
