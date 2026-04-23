@@ -102,12 +102,7 @@ HTMLWidgets.widget({
 
     refreshViewportFromHost() {
       var nextViewport = this.readViewport();
-      if (
-        this._viewport.hostWidth <= 0 ||
-        this._viewport.hostHeight <= 0 ||
-        nextViewport.hostWidth > this._viewport.hostWidth ||
-        nextViewport.hostHeight > this._viewport.hostHeight
-      ) {
+      if (nextViewport.hostWidth > 0 && nextViewport.hostHeight > 0) {
         this._viewport = nextViewport;
       }
       return this._viewport;
@@ -308,9 +303,11 @@ HTMLWidgets.widget({
 
     if ("facet" in spec) {
       var ncol = Math.max(spec.columns || 1, 1);
+      var nrow = inferFacetRows(spec, ncol);
       var cellW = Math.floor(usableW / ncol);
+      var cellH = Math.floor(usableH / Math.max(nrow, 1));
       return Object.assign({}, spec, {
-        spec: Object.assign({}, spec.spec, { width: cellW, height: usableH })
+        spec: Object.assign({}, spec.spec, { width: cellW, height: cellH })
       });
     }
 
@@ -345,6 +342,26 @@ HTMLWidgets.widget({
     }
 
     return Object.assign({}, spec);
+  }
+
+  function inferFacetRows(spec, columns) {
+    var count = inferFacetCount(spec);
+    if (count <= 0) return 1;
+    return Math.ceil(count / Math.max(columns, 1));
+  }
+
+  function inferFacetCount(spec) {
+    if (!spec.facet || typeof spec.facet.field !== "string") return 0;
+    var field = spec.facet.field;
+    var values = spec.data && Array.isArray(spec.data.values) ? spec.data.values : null;
+    if (!values || values.length === 0) return 0;
+
+    var seen = Object.create(null);
+    for (var i = 0; i < values.length; i++) {
+      if (!Object.prototype.hasOwnProperty.call(values[i], field)) continue;
+      seen[String(values[i][field])] = true;
+    }
+    return Object.keys(seen).length;
   }
 
   // Expose sizing helpers for testing under Node.js

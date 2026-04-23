@@ -411,3 +411,32 @@ test("renders narrow widgets at logical width 450 with scale transform", async (
   assert.equal(w.el._vegaContainer.style.height, "400px");
   assert.equal(w.el._vegaContainer.style.transformOrigin, "top left");
 });
+
+test("renderValue refreshes viewport from host when the host shrinks", async () => {
+  var env = createEnvironment();
+  var calls = [];
+
+  env.setEmbed(function(container, spec) {
+    calls.push(spec);
+    return Promise.resolve({
+      view: {
+        spec: spec,
+        finalize: function() {}
+      }
+    });
+  });
+
+  var w = env.createInstance(900, 400);
+  w.instance.renderValue({ spec: { mark: "point" } });
+  await flushMicrotasks();
+
+  w.el.clientWidth = 225;
+  w.el.clientHeight = 400;
+  w.instance.renderValue({ spec: { mark: "point" } });
+  await flushMicrotasks();
+
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].width, 450);
+  assert.equal(calls[1].height, 400);
+  assert.equal(w.el._vegaContainer.style.transform, "scale(0.5)");
+});

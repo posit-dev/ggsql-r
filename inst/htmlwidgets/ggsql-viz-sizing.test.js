@@ -103,6 +103,30 @@ test("allocateCompoundSize divides concat height by inferred row count", functio
   assert.equal(result.concat[2].height, 190);
 });
 
+test("allocateCompoundSize divides facet height by inferred row count", function() {
+  var sizing = loadSizing();
+  var spec = {
+    data: {
+      values: [
+        { facet_key: "a" },
+        { facet_key: "b" },
+        { facet_key: "c" },
+        { facet_key: "d" },
+        { facet_key: "e" },
+        { facet_key: "f" }
+      ]
+    },
+    facet: { field: "facet_key" },
+    columns: 3,
+    spec: { mark: "point" }
+  };
+  var viewport = { logicalWidth: 900, logicalHeight: 500 };
+  var result = sizing.allocateCompoundSize(spec, viewport);
+
+  assert.equal(result.spec.width, 273);
+  assert.equal(result.spec.height, 190);
+});
+
 test("allocateCompoundSize distributes hconcat children across usable width", function() {
   var sizing = loadSizing();
   var spec = { hconcat: [{ mark: "point" }, { mark: "bar" }] };
