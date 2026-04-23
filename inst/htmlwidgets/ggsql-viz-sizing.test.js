@@ -93,3 +93,21 @@ test("allocateCompoundSize does not mutate the input spec", function() {
   assert.equal(spec.concat[0].width, undefined);
   assert.equal(sub.width, undefined);
 });
+
+test("allocateCompoundSize ignores legends when computing allocation", function() {
+  var sizing = loadSizing();
+  var base = { concat: [{ mark: "point" }] };
+  var withLegend = {
+    concat: [{
+      mark: "point",
+      encoding: { color: { field: "c" } }
+    }]
+  };
+  var viewport = { logicalWidth: 900, logicalHeight: 500 };
+
+  var baseResult = sizing.allocateCompoundSize(base, viewport);
+  var legendResult = sizing.allocateCompoundSize(withLegend, viewport);
+
+  assert.equal(baseResult.concat[0].width, legendResult.concat[0].width);
+  assert.equal(baseResult.concat[0].height, legendResult.concat[0].height);
+});
