@@ -329,7 +329,7 @@ test("updates simple specs in-place on resize without re-embedding", async () =>
   assert.equal(runAsyncCalls, 1);
 });
 
-test("grows compound widgets to fit taller embedded content", async () => {
+test("does not mutate host height for compound specs", async () => {
   var env = createEnvironment();
 
   env.setEmbed(function(container, spec) {
@@ -354,10 +354,10 @@ test("grows compound widgets to fit taller embedded content", async () => {
   });
   await flushMicrotasks();
 
-  assert.equal(w.el.style.height, "760px");
+  assert.equal(w.el.style.height, "360px");
 });
 
-test("rerenders compound specs after height changes", async () => {
+test("renders narrow widgets at logical width 450 with scale transform", async () => {
   var env = createEnvironment();
   var calls = [];
 
@@ -371,151 +371,11 @@ test("rerenders compound specs after height changes", async () => {
     });
   });
 
-  var w = env.createInstance(900, 400);
-
-  w.instance.renderValue({
-    spec: {
-      facet: { field: "carb" },
-      columns: 3,
-      spec: { mark: "point" }
-    }
-  });
-  await flushMicrotasks();
-
-  assert.equal(calls.length, 1);
-  assert.equal(calls[0].spec.height, 280);
-
-  w.el.clientHeight = 520;
-  w.instance.resize(900, 520);
-  await flushMicrotasks();
-
-  assert.equal(calls.length, 2);
-  assert.equal(calls[1].spec.height, 400);
-});
-
-test("rerenders compound specs using the real resize height after self-expansion", async () => {
-  var env = createEnvironment();
-  var calls = [];
-
-  env.setEmbed(function(container, spec) {
-    calls.push(spec);
-    container.scrollHeight = calls.length === 1 ? 760 : 900;
-    return Promise.resolve({
-      view: {
-        spec: spec,
-        finalize: function() {}
-      }
-    });
-  });
-
-  var w = env.createInstance(900, 360);
-  w.el.style.height = "360px";
-
-  w.instance.renderValue({
-    spec: {
-      facet: { field: "carb" },
-      columns: 3,
-      spec: { mark: "point" }
-    }
-  });
-  await flushMicrotasks();
-
-  assert.equal(calls.length, 1);
-  assert.equal(calls[0].spec.height, 240);
-  assert.equal(w.el.style.height, "760px");
-
-  w.el.clientWidth = 760;
-  w.el.clientHeight = 760;
-  w.instance.resize(760, 360);
-  await flushMicrotasks();
-
-  assert.equal(calls.length, 2);
-  assert.equal(calls[1].spec.height, 240);
-});
-
-test("rerenders compound specs using a new base height after a real host height change", async () => {
-  var env = createEnvironment();
-  var calls = [];
-
-  env.setEmbed(function(container, spec) {
-    calls.push(spec);
-    container.scrollHeight = 760;
-    return Promise.resolve({
-      view: {
-        spec: spec,
-        finalize: function() {}
-      }
-    });
-  });
-
-  var w = env.createInstance(900, 360);
-  w.el.style.height = "360px";
-
-  w.instance.renderValue({
-    spec: {
-      facet: { field: "carb" },
-      columns: 3,
-      spec: { mark: "point" }
-    }
-  });
-  await flushMicrotasks();
-
-  assert.equal(calls.length, 1);
-  assert.equal(calls[0].spec.height, 240);
-
-  w.el.clientHeight = 520;
-  w.instance.resize(900, 520);
-  await flushMicrotasks();
-
-  assert.equal(calls.length, 2);
-  assert.equal(calls[1].spec.height, 400);
-});
-
-test("adds a scaled host class below the minimum width", async () => {
-  var env = createEnvironment();
-
-  env.setEmbed(function(container, spec) {
-    container.scrollHeight = 200;
-    return Promise.resolve({
-      view: {
-        spec: spec,
-        finalize: function() {}
-      }
-    });
-  });
-
-  var w = env.createInstance(225);
-  w.el.style.height = "400px";
-
+  var w = env.createInstance(225, 400);
   w.instance.renderValue({ spec: { mark: "point" } });
   await flushMicrotasks();
 
-  assert.equal(w.el.classList.contains("ggsql-viz--scaled"), true);
-});
-
-test("removes the scaled host class after returning to normal width", async () => {
-  var env = createEnvironment();
-
-  env.setEmbed(function(container, spec) {
-    container.scrollHeight = 200;
-    return Promise.resolve({
-      view: {
-        spec: spec,
-        finalize: function() {}
-      }
-    });
-  });
-
-  var w = env.createInstance(225);
-  w.el.style.height = "400px";
-
-  w.instance.renderValue({ spec: { mark: "point" } });
-  await flushMicrotasks();
-  assert.equal(w.el.classList.contains("ggsql-viz--scaled"), true);
-
-  w.el.clientWidth = 450;
-  w.instance.resize(450, 400);
-  await flushMicrotasks();
-
-  assert.equal(w.el.classList.contains("ggsql-viz--scaled"), false);
+  assert.equal(calls[0].width, 450);
+  assert.equal(calls[0].height, 400);
+  assert.equal(w.el._vegaContainer.style.transform, "scale(0.5)");
 });
