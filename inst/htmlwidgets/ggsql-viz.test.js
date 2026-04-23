@@ -272,7 +272,8 @@ test("passes explicit dimensions and fit autosize for simple specs", async () =>
   assert.equal(calls.length, 1);
   assert.equal(calls[0].width, 600);
   assert.equal(calls[0].height, 320);
-  assert.deepEqual(calls[0].autosize, {
+  assert.ok(calls[0].autosize);
+  assert.deepEqual({ ...calls[0].autosize }, {
     type: "fit",
     contains: "padding"
   });
