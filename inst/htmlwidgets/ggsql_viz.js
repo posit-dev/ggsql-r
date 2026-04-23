@@ -2,8 +2,7 @@ HTMLWidgets.widget({
   name: "ggsql_viz",
   type: "output",
 
-  factory: function(el, width, height) {
-    el.initializeLayout(width, height);
+  factory: function(el) {
     return {
       renderValue: function(x) {
         el.renderValue(x);
@@ -27,27 +26,33 @@ HTMLWidgets.widget({
 
 (function() {
   var MIN_WIDTH = 450;
+  var OUTER_PAD_X = 80;
+  var OUTER_PAD_Y = 120;
 
-  function normalizeLayoutWidth(value, fallback) {
-    return typeof value === "number" && value > 0 ? value : fallback;
+  function readHostBox(el, width, height) {
+    var hostWidth =
+      typeof width === "number" && width > 0 ? width : el.clientWidth || 0;
+    var styledHeight =
+      typeof el.style.height === "string" && /px$/.test(el.style.height)
+        ? parseFloat(el.style.height)
+        : 0;
+    var hostHeight =
+      typeof height === "number" && height > 0
+        ? height
+        : styledHeight || el.clientHeight || 0;
+
+    var hostBox = { hostWidth: hostWidth, hostHeight: hostHeight };
+    return hostBox;
   }
 
-  function normalizeLayoutHeight(value, fallback) {
-    if (typeof value === "number" && value > 0) return value;
-    if (typeof value === "string" && /px$/.test(value)) return parseFloat(value);
-    return fallback;
-  }
-
-  function viewportFromHost(width, height) {
-    var hostWidth = typeof width === "number" && width > 0 ? width : 0;
-    var hostHeight = typeof height === "number" && height > 0 ? height : 0;
-
+  function buildSimpleLayout(hostWidth, hostHeight) {
     return {
       hostWidth: hostWidth,
       hostHeight: hostHeight,
-      logicalWidth: Math.max(hostWidth, MIN_WIDTH),
-      logicalHeight: hostHeight,
-      scale: hostWidth > 0 && hostWidth < MIN_WIDTH ? hostWidth / MIN_WIDTH : 1
+      renderWidth: Math.max(hostWidth, MIN_WIDTH),
+      renderHeight: hostHeight,
+      scale:
+        hostWidth > 0 && hostWidth < MIN_WIDTH ? hostWidth / MIN_WIDTH : 1
     };
   }
 
@@ -55,13 +60,12 @@ HTMLWidgets.widget({
     constructor() {
       super();
       this._view = null;
+      this._value = null;
+      this._isCompound = false;
+      this._layout = null;
       this._scaleWrapper = null;
       this._vegaContainer = null;
-      this._viewport = viewportFromHost(0, 0);
-      this._isCompound = false;
-      this._renderVersion = 0;
-      this._lastRenderedViewport = null;
-      this._lastValue = null;
+      this._embedToken = null;
     }
 
     disconnectedCallback() {
@@ -69,43 +73,12 @@ HTMLWidgets.widget({
     }
 
     finalize() {
-      if (this._view) {
-        this._view.finalize();
-      }
-      this._renderVersion += 1;
+      if (this._view) this._view.finalize();
       this._view = null;
-      this._vegaContainer = null;
+      this._layout = null;
+      this._embedToken = null;
       this._scaleWrapper = null;
-      this._lastRenderedViewport = null;
-    }
-
-    initializeLayout(width, height) {
-      this._viewport = this.readViewport(width, height);
-    }
-
-    readViewport(width, height) {
-      var styledHeight =
-        typeof this.style.height === "string" && /px$/.test(this.style.height)
-          ? parseFloat(this.style.height)
-          : 0;
-
-      return viewportFromHost(
-        normalizeLayoutWidth(width, this.clientWidth),
-        normalizeLayoutHeight(height, styledHeight || this.clientHeight)
-      );
-    }
-
-    updateViewport(width, height) {
-      this._viewport = this.readViewport(width, height);
-      return this._viewport;
-    }
-
-    refreshViewportFromHost() {
-      var nextViewport = this.readViewport();
-      if (nextViewport.hostWidth > 0 && nextViewport.hostHeight > 0) {
-        this._viewport = nextViewport;
-      }
-      return this._viewport;
+      this._vegaContainer = null;
     }
 
     createStructure() {
@@ -126,156 +99,128 @@ HTMLWidgets.widget({
       return vegaContainer;
     }
 
-    applyViewport(viewport) {
+    applyLayout(layout) {
       if (!this._scaleWrapper || !this._vegaContainer) return;
 
-      this._scaleWrapper.style.width = "100%";
-      this._scaleWrapper.style.height = "100%";
-      this._scaleWrapper.style.overflow = "hidden";
-
-      this._vegaContainer.style.width = viewport.logicalWidth + "px";
-      this._vegaContainer.style.height = viewport.logicalHeight + "px";
+      this._vegaContainer.style.width = layout.renderWidth + "px";
+      this._vegaContainer.style.height = layout.renderHeight + "px";
       this._vegaContainer.style.transform =
-        viewport.scale < 1 ? "scale(" + viewport.scale + ")" : "";
-      this._vegaContainer.style.transformOrigin = "top left";
+        layout.scale < 1 ? "scale(" + layout.scale + ")" : "";
     }
 
-    rememberRenderedViewport(viewport) {
-      this._lastRenderedViewport = {
-        logicalWidth: viewport.logicalWidth,
-        logicalHeight: viewport.logicalHeight
-      };
-    }
-
-    hasMaterialViewportChange(viewport) {
-      if (!this._lastRenderedViewport) return true;
-      return (
-        Math.abs(viewport.logicalWidth - this._lastRenderedViewport.logicalWidth) > 1 ||
-        Math.abs(viewport.logicalHeight - this._lastRenderedViewport.logicalHeight) > 1
-      );
-    }
-
-    buildSimpleSpec(spec, viewport) {
+    buildSimpleSpec(spec, layout) {
       return Object.assign({}, spec, {
-        width: viewport.logicalWidth,
-        height: viewport.logicalHeight,
+        width: layout.renderWidth,
+        height: layout.renderHeight,
         autosize: { type: "fit", contains: "padding" }
       });
     }
 
-    buildCompoundSpec(spec, viewport) {
-      return allocateCompoundSize(spec, viewport);
+    renderSimple(layout) {
+      var spec = this.buildSimpleSpec(this._value.spec, layout);
+      this.embedSpec(spec, layout);
     }
 
-    embedSpec(spec, viewport) {
-      var self = this;
-      var container = this.createStructure();
-      var currentVersion = ++this._renderVersion;
+    resizeSimpleView(layout) {
+      if (!this._view) {
+        this.renderSimple(layout);
+        return;
+      }
 
-      this.applyViewport(viewport);
-
-      window.vegaEmbed(container, spec, { actions: true })
-        .then(function(result) {
-          if (currentVersion !== self._renderVersion || self._vegaContainer !== container) {
-            result.view.finalize();
-            return;
-          }
-          self._view = result.view;
-          self.rememberRenderedViewport(viewport);
-          self.applyViewport(self._viewport);
-        })
-        .catch(function(err) {
-          if (currentVersion !== self._renderVersion || self._vegaContainer !== container) {
-            return;
-          }
-          self.textContent = "ggsql render error: " + err;
-        });
-    }
-
-    updateSimpleView(viewport) {
       var self = this;
       var view = this._view;
 
-      if (
-        !view ||
-        typeof view.width !== "function" ||
-        typeof view.height !== "function" ||
-        typeof view.resize !== "function" ||
-        typeof view.runAsync !== "function"
-      ) {
-        this.renderCurrentValue();
-        return;
-      }
-
-      var currentVersion = ++this._renderVersion;
-
+      this._layout = layout;
+      this.applyLayout(layout);
       view
-        .width(viewport.logicalWidth)
-        .height(viewport.logicalHeight)
+        .width(layout.renderWidth)
+        .height(layout.renderHeight)
         .resize()
         .runAsync()
-        .then(function() {
-          if (currentVersion !== self._renderVersion || self._view !== view) {
-            return;
-          }
-          self.rememberRenderedViewport(viewport);
-          self.applyViewport(self._viewport);
-        })
         .catch(function(err) {
-          if (currentVersion !== self._renderVersion || self._view !== view) {
-            return;
-          }
+          if (self._view !== view) return;
           self.textContent = "ggsql render error: " + err;
         });
     }
 
-    renderSimpleSpec(viewport) {
-      var spec = this.buildSimpleSpec(this._lastValue.spec, viewport);
-
-      this.finalize();
-      this.embedSpec(spec, viewport);
+    renderCompound(layout) {
+      var spec = allocateCompoundSize(this._value.spec, layout);
+      this.embedSpec(spec, layout);
     }
 
-    renderCompoundSpec(viewport) {
-      var spec = this.buildCompoundSpec(this._lastValue.spec, viewport);
-
-      this.finalize();
-      this.embedSpec(spec, viewport);
+    hasMaterialCompoundResize(nextLayout) {
+      if (!this._layout) return true;
+      return (
+        Math.abs(this._layout.hostWidth - nextLayout.hostWidth) > 1 ||
+        Math.abs(this._layout.hostHeight - nextLayout.hostHeight) > 1
+      );
     }
 
-    renderCurrentValue() {
-      if (!this._lastValue) return;
+    embedSpec(spec, layout) {
+      var self = this;
+      var container = this.createStructure();
+      var token = {};
 
-      var viewport = this._viewport;
-      if (this._isCompound) {
-        this.renderCompoundSpec(viewport);
-        return;
-      }
+      this._embedToken = token;
+      this._layout = layout;
+      this.applyLayout(layout);
 
-      this.renderSimpleSpec(viewport);
+      window.vegaEmbed(container, spec, { actions: true })
+        .then(function(result) {
+          if (self._embedToken !== token || self._vegaContainer !== container) {
+            result.view.finalize();
+            return;
+          }
+          if (self._view && self._view !== result.view) self._view.finalize();
+          self._view = result.view;
+          self.applyLayout(self._layout);
+        })
+        .catch(function(err) {
+          if (self._embedToken !== token || self._vegaContainer !== container) return;
+          self.textContent = "ggsql render error: " + err;
+        });
     }
 
     renderValue(x) {
-      this._lastValue = x;
+      var host = readHostBox(this);
+
+      this._value = x;
       this._isCompound = isCompound(x.spec);
-      this.refreshViewportFromHost();
-      this.renderCurrentValue();
+
+      if (this._isCompound) {
+        this.renderCompound(buildSimpleLayout(host.hostWidth, host.hostHeight));
+        return;
+      }
+
+      this.renderSimple(buildSimpleLayout(host.hostWidth, host.hostHeight));
     }
 
     resize(width, height) {
-      var viewport = this.updateViewport(width, height);
-      this.applyViewport(viewport);
+      if (!this._value) return;
 
-      if (!this._lastValue || !this.hasMaterialViewportChange(viewport)) {
+      var host = readHostBox(this, width, height);
+      var layout = buildSimpleLayout(host.hostWidth, host.hostHeight);
+
+      if (this._isCompound) {
+        if (this.hasMaterialCompoundResize(layout)) this.renderCompound(layout);
+        else {
+          this._layout = layout;
+          this.applyLayout(layout);
+        }
         return;
       }
 
-      if (this._isCompound || !this._view) {
-        this.renderCurrentValue();
+      if (
+        !this._layout ||
+        this._layout.renderWidth !== layout.renderWidth ||
+        this._layout.renderHeight !== layout.renderHeight
+      ) {
+        this.resizeSimpleView(layout);
         return;
       }
 
-      this.updateSimpleView(viewport);
+      this._layout = layout;
+      this.applyLayout(layout);
     }
   }
 
@@ -284,9 +229,6 @@ HTMLWidgets.widget({
   }
 
   // -- Compound spec sizing helpers ------------------------------------------
-
-  var OUTER_PAD_X = 80;
-  var OUTER_PAD_Y = 120;
 
   function isCompound(spec) {
     return (
@@ -297,9 +239,9 @@ HTMLWidgets.widget({
     );
   }
 
-  function allocateCompoundSize(spec, viewport) {
-    var usableW = Math.max(viewport.logicalWidth - OUTER_PAD_X, 100);
-    var usableH = Math.max(viewport.logicalHeight - OUTER_PAD_Y, 100);
+  function allocateCompoundSize(spec, layout) {
+    var usableW = Math.max(layout.renderWidth - OUTER_PAD_X, 100);
+    var usableH = Math.max(layout.renderHeight - OUTER_PAD_Y, 100);
 
     if ("facet" in spec) {
       var ncol = Math.max(spec.columns || 1, 1);
@@ -367,6 +309,8 @@ HTMLWidgets.widget({
   // Expose sizing helpers for testing under Node.js
   if (typeof module !== "undefined") {
     module.exports = {
+      buildSimpleLayout: buildSimpleLayout,
+      readHostBox: readHostBox,
       isCompound: isCompound,
       allocateCompoundSize: allocateCompoundSize
     };

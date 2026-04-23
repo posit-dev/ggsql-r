@@ -26,6 +26,19 @@ test_that("engine can handle a query", {
   expect_length(out, 1L)
 })
 
+test_that("interactive writer keeps the htmlwidget path at narrow figure widths", {
+  query <- c(
+    paste0("SELECT mpg, disp FROM '", data_file, "'"),
+    "VISUALISE mpg AS x, disp AS y",
+    "DRAW point"
+  )
+
+  out <- run_query(query, fig.width = 2.35, fig.height = 4)
+
+  expect_match(out, "ggsql_viz")
+  expect_match(out, "<ggsql-viz", fixed = TRUE)
+})
+
 test_that("engine can handle a query without visualisation statement", {
   query <- paste0("SELECT mpg, disp FROM '", data_file, "'")
 
@@ -221,6 +234,19 @@ test_that("writer defaults to interactive vegalite", {
   )
   out <- run_query(query)
   expect_match(out, "ggsql_viz")
+})
+
+test_that("interactive writer keeps the htmlwidget path at narrow figure widths", {
+  query <- c(
+    paste0("SELECT mpg, disp FROM '", data_file, "'"),
+    "VISUALISE mpg AS x, disp AS y",
+    "DRAW point"
+  )
+
+  out <- run_query(query, fig.width = 2.35, fig.height = 4)
+
+  expect_match(out, "ggsql_viz")
+  expect_match(out, "<ggsql-viz", fixed = TRUE)
 })
 
 test_that("writer = 'vegalite_svg' produces SVG output", {
