@@ -272,10 +272,10 @@ test("passes explicit dimensions and fit autosize for simple specs", async () =>
   assert.equal(calls.length, 1);
   assert.equal(calls[0].width, 600);
   assert.equal(calls[0].height, 320);
-  assert.equal(JSON.stringify(calls[0].autosize), JSON.stringify({
+  assert.deepEqual(calls[0].autosize, {
     type: "fit",
     contains: "padding"
-  }));
+  });
 });
 
 test("updates simple specs in-place on resize without re-embedding", async () => {

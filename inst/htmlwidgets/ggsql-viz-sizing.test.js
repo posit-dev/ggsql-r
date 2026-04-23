@@ -96,7 +96,10 @@ test("allocateCompoundSize divides concat height by inferred row count", functio
   var result = sizing.allocateCompoundSize(spec, viewport);
 
   assert.equal(result.concat[0].width, 410);
+  assert.equal(result.concat[1].width, 410);
+  assert.equal(result.concat[2].width, 410);
   assert.equal(result.concat[0].height, 190);
+  assert.equal(result.concat[1].height, 190);
   assert.equal(result.concat[2].height, 190);
 });
 
@@ -164,10 +167,10 @@ test("allocateCompoundSize never touches legend encodings", function() {
       mark: "point",
       layer: [{
         mark: "line",
-        encoding: legendProxy("layer[0].encoding")
+        encoding: legendProxy("concat[0].layer[0].encoding")
       }, {
         mark: "point",
-        encoding: legendFieldGuard("layer[0].layer[1].encoding")
+        encoding: legendFieldGuard("concat[0].layer[1].encoding")
       }]
     }]
   };
