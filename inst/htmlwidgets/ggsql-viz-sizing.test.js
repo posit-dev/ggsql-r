@@ -111,3 +111,37 @@ test("allocateCompoundSize ignores legends when computing allocation", function(
   assert.equal(baseResult.concat[0].width, legendResult.concat[0].width);
   assert.equal(baseResult.concat[0].height, legendResult.concat[0].height);
 });
+
+test("allocateCompoundSize does not read legend encodings even via proxies", function() {
+  var sizing = loadSizing();
+  function throwingEncoding(field) {
+    return new Proxy({ field: field }, {
+      get(target, key) {
+        if (key === "field") return target.field;
+        throw new Error("encoding should not be inspected");
+      }
+    });
+  }
+  var spec = {
+    concat: [{
+      mark: "point",
+      encoding: throwingEncoding("c")
+    }]
+  };
+  var layeredSpec = {
+    concat: [{
+      mark: "point",
+      layer: [{
+        mark: "line",
+        encoding: throwingEncoding("a")
+      }, {
+        mark: "point",
+        encoding: throwingEncoding("b")
+      }]
+    }]
+  };
+  var viewport = { logicalWidth: 800, logicalHeight: 400 };
+
+  sizing.allocateCompoundSize(spec, viewport);
+  sizing.allocateCompoundSize(layeredSpec, viewport);
+});
