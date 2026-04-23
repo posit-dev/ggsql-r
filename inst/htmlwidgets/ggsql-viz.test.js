@@ -378,4 +378,10 @@ test("renders narrow widgets at logical width 450 with scale transform", async (
   assert.equal(calls[0].width, 450);
   assert.equal(calls[0].height, 400);
   assert.equal(w.el._vegaContainer.style.transform, "scale(0.5)");
+  assert.equal(w.el._scaleWrapper.style.width, "100%");
+  assert.equal(w.el._scaleWrapper.style.height, "100%");
+  assert.equal(w.el._scaleWrapper.style.overflow, "hidden");
+  assert.equal(w.el._vegaContainer.style.width, "450px");
+  assert.equal(w.el._vegaContainer.style.height, "400px");
+  assert.equal(w.el._vegaContainer.style.transformOrigin, "top left");
 });

@@ -28,6 +28,35 @@ function loadSizing() {
   return context.module.exports;
 }
 
+function legendProxy(path) {
+  return new Proxy({}, {
+    get() {
+      throw new Error("Should not inspect " + path);
+    },
+    ownKeys() {
+      throw new Error("Should not inspect " + path);
+    },
+    has() {
+      throw new Error("Should not inspect " + path);
+    }
+  });
+}
+
+function legendFieldGuard(path) {
+  var fields = {};
+  Object.defineProperty(fields, "color", {
+    get: function() {
+      throw new Error("Should not inspect " + path + ".color");
+    }
+  });
+  Object.defineProperty(fields, "fill", {
+    get: function() {
+      throw new Error("Should not inspect " + path + ".fill");
+    }
+  });
+  return fields;
+}
+
 // --- isCompound ---
 
 test("isCompound returns false for a simple mark spec", function() {
@@ -112,36 +141,38 @@ test("allocateCompoundSize ignores legends when computing allocation", function(
   assert.equal(baseResult.concat[0].height, legendResult.concat[0].height);
 });
 
-test("allocateCompoundSize does not read legend encodings even via proxies", function() {
+test("allocateCompoundSize never touches legend encodings", function() {
   var sizing = loadSizing();
-  function throwingEncoding(field) {
-    return new Proxy({ field: field }, {
-      get(target, key) {
-        if (key === "field") return target.field;
-        throw new Error("encoding should not be inspected");
-      }
-    });
-  }
-  var spec = {
+  var viewport = { logicalWidth: 800, logicalHeight: 400 };
+
+  var specEncoding = {
     concat: [{
       mark: "point",
-      encoding: throwingEncoding("c")
+      encoding: legendProxy("encoding")
     }]
   };
+
+  var specLegendFields = {
+    concat: [{
+      mark: "point",
+      encoding: legendFieldGuard("encoding")
+    }]
+  };
+
   var layeredSpec = {
     concat: [{
       mark: "point",
       layer: [{
         mark: "line",
-        encoding: throwingEncoding("a")
+        encoding: legendProxy("layer[0].encoding")
       }, {
         mark: "point",
-        encoding: throwingEncoding("b")
+        encoding: legendFieldGuard("layer[0].layer[1].encoding")
       }]
     }]
   };
-  var viewport = { logicalWidth: 800, logicalHeight: 400 };
 
-  sizing.allocateCompoundSize(spec, viewport);
+  sizing.allocateCompoundSize(specEncoding, viewport);
+  sizing.allocateCompoundSize(specLegendFields, viewport);
   sizing.allocateCompoundSize(layeredSpec, viewport);
 });
