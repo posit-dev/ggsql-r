@@ -2,8 +2,10 @@ library(shiny)
 library(ggsql)
 
 ui <- fluidPage(
-  tags$p("This query creates 6 facets, so the widget should need 2 rows."),
-  tags$p("If the bug is present, the lower row is clipped instead of fitting cleanly."),
+  tags$p("The ggsqlOutput container owns the chart size (fixed height)."),
+  tags$p("This query creates 6 facets (2 rows). The lower row should not be clipped."),
+  tags$p("The host height should not change after render; the chart should relayout within the fixed output box."),
+  tags$p("If the page becomes narrower than 450px, the chart should scale visually without changing host size."),
   tags$div(
     style = "width: 900px; max-width: 100%; border: 1px solid #ccc; padding: 8px;",
     ggsqlOutput("chart", height = "360px")

@@ -2,12 +2,14 @@ library(shiny)
 library(ggsql)
 
 ui <- fluidPage(
-  tags$p("Resize the bordered box horizontally from about 900px down to about 760px."),
-  tags$p("The faceted chart should relayout continuously as width changes."),
+  tags$p("The ggsqlOutput container owns the chart size (fixed height)."),
+  tags$p("Resize the bordered box horizontally from about 900px down below 450px."),
+  tags$p("The chart should relayout within the fixed output box without changing host height (no vertical drift)."),
+  tags$p("Below 450px, the chart should remain legible via inner scaling only; returning above 450px should remove the transform."),
   tags$div(
     style = paste(
       "width: 900px;",
-      "min-width: 720px;",
+      "min-width: 240px;",
       "max-width: 100%;",
       "resize: horizontal;",
       "overflow: auto;",
