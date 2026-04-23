@@ -27,11 +27,6 @@ HTMLWidgets.widget({
 
 (function() {
   var MIN_WIDTH = 450;
-  var SCALED_CLASS = "ggsql-viz--scaled";
-
-  function parsePixelHeight(value) {
-    return typeof value === "string" && /px$/.test(value) ? parseFloat(value) : 0;
-  }
 
   function normalizeLayoutWidth(value, fallback) {
     return typeof value === "number" && value > 0 ? value : fallback;
@@ -43,17 +38,29 @@ HTMLWidgets.widget({
     return fallback;
   }
 
+  function viewportFromHost(width, height) {
+    var hostWidth = typeof width === "number" && width > 0 ? width : 0;
+    var hostHeight = typeof height === "number" && height > 0 ? height : 0;
+
+    return {
+      hostWidth: hostWidth,
+      hostHeight: hostHeight,
+      logicalWidth: Math.max(hostWidth, MIN_WIDTH),
+      logicalHeight: hostHeight,
+      scale: hostWidth > 0 && hostWidth < MIN_WIDTH ? hostWidth / MIN_WIDTH : 1
+    };
+  }
+
   class GgsqlViz extends HTMLElement {
     constructor() {
       super();
       this._view = null;
-      this._container = null;
-      this._layoutWidth = 0;
-      this._layoutHeight = 0;
-      this._isScaled = false;
+      this._scaleWrapper = null;
+      this._vegaContainer = null;
+      this._viewport = viewportFromHost(0, 0);
       this._isCompound = false;
       this._renderVersion = 0;
-      this._lastSize = null;
+      this._lastRenderedViewport = null;
       this._lastValue = null;
     }
 
@@ -64,132 +71,117 @@ HTMLWidgets.widget({
     finalize() {
       if (this._view) {
         this._view.finalize();
-        this._view = null;
       }
-      this._container = null;
-      this._lastSize = null;
-    }
-
-    setScaledState(scaled) {
-      if (scaled) {
-        this.classList.add(SCALED_CLASS);
-      } else {
-        this.classList.remove(SCALED_CLASS);
-      }
+      this._view = null;
+      this._lastRenderedViewport = null;
     }
 
     initializeLayout(width, height) {
-      this._layoutWidth = normalizeLayoutWidth(width, this.clientWidth);
-      this._layoutHeight = normalizeLayoutHeight(
-        height,
-        parsePixelHeight(this.style.height) || this.clientHeight
+      this._viewport = this.readViewport(width, height);
+    }
+
+    readViewport(width, height) {
+      var styledHeight =
+        typeof this.style.height === "string" && /px$/.test(this.style.height)
+          ? parseFloat(this.style.height)
+          : 0;
+
+      return viewportFromHost(
+        normalizeLayoutWidth(width, this.clientWidth),
+        normalizeLayoutHeight(height, styledHeight || this.clientHeight)
       );
     }
 
-    setHostHeight(value) {
-      this.style.height = value;
+    updateViewport(width, height) {
+      this._viewport = this.readViewport(width, height);
+      return this._viewport;
     }
 
-    updateLayout(width, height) {
-      this._layoutWidth = normalizeLayoutWidth(width, this._layoutWidth || this.clientWidth);
-      this._layoutHeight = normalizeLayoutHeight(
-        height,
-        this._layoutHeight || parsePixelHeight(this.style.height) || this.clientHeight
-      );
-    }
-
-    layoutSize() {
-      return {
-        width: this._layoutWidth || this.clientWidth,
-        height: this._layoutHeight || parsePixelHeight(this.style.height) || this.clientHeight
-      };
-    }
-
-    scaleToFit() {
-      var available = this._layoutWidth || this.clientWidth;
-      if (!this._container) return;
-      if (available < MIN_WIDTH) {
-        this.setScaledState(true);
-        var scale = available / MIN_WIDTH;
-        this._container.style.transform = "scale(" + scale + ")";
-        this._container.style.transformOrigin = "top left";
-        this.setHostHeight(
-          Math.max(this._layoutHeight, this._container.scrollHeight * scale) + "px"
-        );
-        this._isScaled = true;
-      } else {
-        this.setScaledState(false);
-        this._container.style.transform = "";
-        if (this._isCompound) {
-          this.setHostHeight(Math.max(this._container.scrollHeight, this._layoutHeight) + "px");
-        } else if (this._isScaled) {
-          this.setHostHeight(this._layoutHeight + "px");
-        }
-        this._isScaled = false;
-      }
-    }
-
-    createContainer() {
+    createStructure() {
       this.innerHTML = "";
 
-      var container = document.createElement("div");
-      container.className = "ggsql-container";
-      this.appendChild(container);
-      this._container = container;
-      return container;
+      var scaleWrapper = document.createElement("div");
+      scaleWrapper.className = "ggsql-scale-wrapper";
+
+      var vegaContainer = document.createElement("div");
+      vegaContainer.className = "ggsql-container";
+
+      scaleWrapper.appendChild(vegaContainer);
+      this.appendChild(scaleWrapper);
+
+      this._scaleWrapper = scaleWrapper;
+      this._vegaContainer = vegaContainer;
+
+      return vegaContainer;
     }
 
-    rememberSize(size) {
-      this._lastSize = {
-        width: size.width,
-        height: size.height
+    applyViewport(viewport) {
+      if (!this._scaleWrapper || !this._vegaContainer) return;
+
+      this._scaleWrapper.style.width = "100%";
+      this._scaleWrapper.style.height = "100%";
+      this._scaleWrapper.style.overflow = "hidden";
+
+      this._vegaContainer.style.width = viewport.logicalWidth + "px";
+      this._vegaContainer.style.height = viewport.logicalHeight + "px";
+      this._vegaContainer.style.transform =
+        viewport.scale < 1 ? "scale(" + viewport.scale + ")" : "";
+      this._vegaContainer.style.transformOrigin = "top left";
+    }
+
+    rememberRenderedViewport(viewport) {
+      this._lastRenderedViewport = {
+        logicalWidth: viewport.logicalWidth,
+        logicalHeight: viewport.logicalHeight
       };
     }
 
-    hasMaterialSizeChange(size) {
-      if (!this._lastSize) return true;
+    hasMaterialViewportChange(viewport) {
+      if (!this._lastRenderedViewport) return true;
       return (
-        Math.abs(size.width - this._lastSize.width) > 1 ||
-        Math.abs(size.height - this._lastSize.height) > 1
+        Math.abs(viewport.logicalWidth - this._lastRenderedViewport.logicalWidth) > 1 ||
+        Math.abs(viewport.logicalHeight - this._lastRenderedViewport.logicalHeight) > 1
       );
     }
 
-    buildSpec(spec, size) {
+    buildSpec(spec, viewport) {
       if (this._isCompound) {
-        return fitToContainer(spec, size.width, size.height);
+        return fitToContainer(spec, viewport.logicalWidth, viewport.logicalHeight);
       }
 
       return Object.assign({}, spec, {
-        width: size.width,
-        height: size.height,
+        width: viewport.logicalWidth,
+        height: viewport.logicalHeight,
         autosize: { type: "fit", contains: "padding" }
       });
     }
 
-    embedSpec(spec, size) {
+    embedSpec(spec, viewport) {
       var self = this;
-      var container = this.createContainer();
+      var container = this.createStructure();
       var currentVersion = ++this._renderVersion;
+
+      this.applyViewport(viewport);
 
       window.vegaEmbed(container, spec, { actions: true })
         .then(function(result) {
-          if (currentVersion !== self._renderVersion || self._container !== container) {
+          if (currentVersion !== self._renderVersion || self._vegaContainer !== container) {
             result.view.finalize();
             return;
           }
           self._view = result.view;
-          self.rememberSize(size);
-          self.scaleToFit();
+          self.rememberRenderedViewport(viewport);
+          self.applyViewport(self._viewport);
         })
         .catch(function(err) {
-          if (currentVersion !== self._renderVersion || self._container !== container) {
+          if (currentVersion !== self._renderVersion || self._vegaContainer !== container) {
             return;
           }
           self.textContent = "ggsql render error: " + err;
         });
     }
 
-    updateSimpleView(size) {
+    updateSimpleView(viewport) {
       var self = this;
       var view = this._view;
 
@@ -207,16 +199,16 @@ HTMLWidgets.widget({
       var currentVersion = ++this._renderVersion;
 
       view
-        .width(size.width)
-        .height(size.height)
+        .width(viewport.logicalWidth)
+        .height(viewport.logicalHeight)
         .resize()
         .runAsync()
         .then(function() {
           if (currentVersion !== self._renderVersion || self._view !== view) {
             return;
           }
-          self.rememberSize(size);
-          self.scaleToFit();
+          self.rememberRenderedViewport(viewport);
+          self.applyViewport(self._viewport);
         })
         .catch(function(err) {
           if (currentVersion !== self._renderVersion || self._view !== view) {
@@ -229,27 +221,25 @@ HTMLWidgets.widget({
     renderCurrentValue() {
       if (!this._lastValue) return;
 
-      var size = this.layoutSize();
-      var spec = this.buildSpec(this._lastValue.spec, size);
+      var viewport = this._viewport;
+      var spec = this.buildSpec(this._lastValue.spec, viewport);
 
       this.finalize();
-      this.embedSpec(spec, size);
+      this.embedSpec(spec, viewport);
     }
 
     renderValue(x) {
-      var styledHeight = parsePixelHeight(this.style.height);
-      this._layoutWidth = this._layoutWidth || this.clientWidth;
-      this._layoutHeight = styledHeight || this._layoutHeight || this.clientHeight;
       this._lastValue = x;
       this._isCompound = isCompound(x.spec);
+      this.updateViewport();
       this.renderCurrentValue();
     }
 
     resize(width, height) {
-      this.updateLayout(width, height);
-      var size = this.layoutSize();
-      if (!this._lastValue || !this.hasMaterialSizeChange(size)) {
-        this.scaleToFit();
+      var viewport = this.updateViewport(width, height);
+      this.applyViewport(viewport);
+
+      if (!this._lastValue || !this.hasMaterialViewportChange(viewport)) {
         return;
       }
 
@@ -258,7 +248,7 @@ HTMLWidgets.widget({
         return;
       }
 
-      this.updateSimpleView(size);
+      this.updateSimpleView(viewport);
     }
   }
 
