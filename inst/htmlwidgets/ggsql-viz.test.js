@@ -212,6 +212,31 @@ test("finalizes view when widget element is disconnected", async () => {
   assert.equal(finalized, true);
 });
 
+test("finalizes stale deferred embeds after disconnect", async () => {
+  var env = createEnvironment();
+  var deferred = createDeferred();
+  var staleView = {
+    finalized: false,
+    finalize: function() { this.finalized = true; }
+  };
+
+  env.setEmbed(function() {
+    return deferred.promise;
+  });
+
+  var w = env.createInstance(450);
+  w.instance.renderValue({ spec: { name: "first" } });
+
+  w.el.remove();
+  deferred.resolve({ view: staleView });
+  await flushMicrotasks();
+
+  assert.equal(staleView.finalized, true);
+  assert.equal(w.el._view, null);
+  assert.equal(w.el._vegaContainer, null);
+  assert.equal(w.el._scaleWrapper, null);
+});
+
 test("rerenders compound specs after moderate width changes", async () => {
   var env = createEnvironment();
   var calls = [];

@@ -72,7 +72,10 @@ HTMLWidgets.widget({
       if (this._view) {
         this._view.finalize();
       }
+      this._renderVersion += 1;
       this._view = null;
+      this._vegaContainer = null;
+      this._scaleWrapper = null;
       this._lastRenderedViewport = null;
     }
 
@@ -94,6 +97,19 @@ HTMLWidgets.widget({
 
     updateViewport(width, height) {
       this._viewport = this.readViewport(width, height);
+      return this._viewport;
+    }
+
+    refreshViewportFromHost() {
+      var nextViewport = this.readViewport();
+      if (
+        this._viewport.hostWidth <= 0 ||
+        this._viewport.hostHeight <= 0 ||
+        nextViewport.hostWidth > this._viewport.hostWidth ||
+        nextViewport.hostHeight > this._viewport.hostHeight
+      ) {
+        this._viewport = nextViewport;
+      }
       return this._viewport;
     }
 
@@ -231,7 +247,7 @@ HTMLWidgets.widget({
     renderValue(x) {
       this._lastValue = x;
       this._isCompound = isCompound(x.spec);
-      this.updateViewport();
+      this.refreshViewportFromHost();
       this.renderCurrentValue();
     }
 
