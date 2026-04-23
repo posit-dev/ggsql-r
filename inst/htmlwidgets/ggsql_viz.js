@@ -160,16 +160,16 @@ HTMLWidgets.widget({
       );
     }
 
-    buildSpec(spec, viewport) {
-      if (this._isCompound) {
-        return fitToContainer(spec, viewport.logicalWidth, viewport.logicalHeight);
-      }
-
+    buildSimpleSpec(spec, viewport) {
       return Object.assign({}, spec, {
         width: viewport.logicalWidth,
         height: viewport.logicalHeight,
         autosize: { type: "fit", contains: "padding" }
       });
+    }
+
+    buildCompoundSpec(spec, viewport) {
+      return allocateCompoundSize(spec, viewport);
     }
 
     embedSpec(spec, viewport) {
@@ -234,14 +234,30 @@ HTMLWidgets.widget({
         });
     }
 
+    renderSimpleSpec(viewport) {
+      var spec = this.buildSimpleSpec(this._lastValue.spec, viewport);
+
+      this.finalize();
+      this.embedSpec(spec, viewport);
+    }
+
+    renderCompoundSpec(viewport) {
+      var spec = this.buildCompoundSpec(this._lastValue.spec, viewport);
+
+      this.finalize();
+      this.embedSpec(spec, viewport);
+    }
+
     renderCurrentValue() {
       if (!this._lastValue) return;
 
       var viewport = this._viewport;
-      var spec = this.buildSpec(this._lastValue.spec, viewport);
+      if (this._isCompound) {
+        this.renderCompoundSpec(viewport);
+        return;
+      }
 
-      this.finalize();
-      this.embedSpec(spec, viewport);
+      this.renderSimpleSpec(viewport);
     }
 
     renderValue(x) {
@@ -274,10 +290,8 @@ HTMLWidgets.widget({
 
   // -- Compound spec sizing helpers ------------------------------------------
 
-  var PADDING_X = 80;
-  var PADDING_Y = 120;
-  var LEGEND_WIDTH = 120;
-  var LEGEND_CHANNELS = ["color", "fill", "stroke", "shape", "size", "opacity"];
+  var OUTER_PAD_X = 80;
+  var OUTER_PAD_Y = 120;
 
   function isCompound(spec) {
     return (
@@ -288,35 +302,12 @@ HTMLWidgets.widget({
     );
   }
 
-  function hasLegend(spec) {
-    var specs = [];
-    if (spec.spec) specs.push(spec.spec);
-    if (Array.isArray(spec.hconcat)) specs = specs.concat(spec.hconcat);
-    if (Array.isArray(spec.vconcat)) specs = specs.concat(spec.vconcat);
-    if (Array.isArray(spec.concat)) specs = specs.concat(spec.concat);
-    if (specs.length === 0) specs.push(spec);
-
-    for (var i = 0; i < specs.length; i++) {
-      var layers = specs[i].layer ? specs[i].layer : [specs[i]];
-      for (var j = 0; j < layers.length; j++) {
-        var enc = layers[j].encoding;
-        if (!enc) continue;
-        for (var k = 0; k < LEGEND_CHANNELS.length; k++) {
-          var ch = LEGEND_CHANNELS[k];
-          if (enc[ch] && enc[ch].field !== undefined) return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  function fitToContainer(spec, containerWidth, containerHeight) {
-    var padX = PADDING_X + (hasLegend(spec) ? LEGEND_WIDTH : 0);
-    var usableW = Math.max(containerWidth - padX, 100);
-    var usableH = Math.max(containerHeight - PADDING_Y, 100);
+  function allocateCompoundSize(spec, viewport) {
+    var usableW = Math.max(viewport.logicalWidth - OUTER_PAD_X, 100);
+    var usableH = Math.max(viewport.logicalHeight - OUTER_PAD_Y, 100);
 
     if ("facet" in spec) {
-      var ncol = spec.columns || 1;
+      var ncol = Math.max(spec.columns || 1, 1);
       var cellW = Math.floor(usableW / ncol);
       return Object.assign({}, spec, {
         spec: Object.assign({}, spec.spec, { width: cellW, height: usableH })
@@ -342,11 +333,13 @@ HTMLWidgets.widget({
     }
 
     if ("concat" in spec) {
-      var ncol = spec.columns || spec.concat.length;
+      var ncol = Math.max(spec.columns || spec.concat.length || 1, 1);
+      var nrow = Math.ceil(spec.concat.length / ncol);
       var cellW = Math.floor(usableW / Math.max(ncol, 1));
+      var cellH = Math.floor(usableH / Math.max(nrow, 1));
       return Object.assign({}, spec, {
         concat: spec.concat.map(function(sub) {
-          return Object.assign({}, sub, { width: cellW, height: usableH });
+          return Object.assign({}, sub, { width: cellW, height: cellH });
         })
       });
     }
@@ -356,6 +349,9 @@ HTMLWidgets.widget({
 
   // Expose sizing helpers for testing under Node.js
   if (typeof module !== "undefined") {
-    module.exports = { isCompound: isCompound, hasLegend: hasLegend, fitToContainer: fitToContainer };
+    module.exports = {
+      isCompound: isCompound,
+      allocateCompoundSize: allocateCompoundSize
+    };
   }
 })();
