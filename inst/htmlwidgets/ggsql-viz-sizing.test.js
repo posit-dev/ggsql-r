@@ -127,6 +127,26 @@ test("allocateCompoundSize divides facet height by inferred row count", function
   assert.equal(result.spec.height, 190);
 });
 
+test("allocateCompoundSize clamps facet dimensions to at least one pixel", function() {
+  var sizing = loadSizing();
+  var values = [];
+  for (var i = 0; i < 200; i++) {
+    values.push({ facet_key: "facet_" + i });
+  }
+
+  var spec = {
+    data: { values: values },
+    facet: { field: "facet_key" },
+    columns: 1,
+    spec: { mark: "point" }
+  };
+  var viewport = { logicalWidth: 120, logicalHeight: 120 };
+  var result = sizing.allocateCompoundSize(spec, viewport);
+
+  assert.equal(result.spec.width, 100);
+  assert.equal(result.spec.height, 1);
+});
+
 test("allocateCompoundSize distributes hconcat children across usable width", function() {
   var sizing = loadSizing();
   var spec = { hconcat: [{ mark: "point" }, { mark: "bar" }] };

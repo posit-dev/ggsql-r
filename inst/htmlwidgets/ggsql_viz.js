@@ -304,15 +304,15 @@ HTMLWidgets.widget({
     if ("facet" in spec) {
       var ncol = Math.max(spec.columns || 1, 1);
       var nrow = inferFacetRows(spec, ncol);
-      var cellW = Math.floor(usableW / ncol);
-      var cellH = Math.floor(usableH / Math.max(nrow, 1));
+      var cellW = Math.max(Math.floor(usableW / ncol), 1);
+      var cellH = Math.max(Math.floor(usableH / Math.max(nrow, 1)), 1);
       return Object.assign({}, spec, {
         spec: Object.assign({}, spec.spec, { width: cellW, height: cellH })
       });
     }
 
     if ("hconcat" in spec) {
-      var cellW = Math.floor(usableW / Math.max(spec.hconcat.length, 1));
+      var cellW = Math.max(Math.floor(usableW / Math.max(spec.hconcat.length, 1)), 1);
       return Object.assign({}, spec, {
         hconcat: spec.hconcat.map(function(sub) {
           return Object.assign({}, sub, { width: cellW, height: usableH });
@@ -321,7 +321,7 @@ HTMLWidgets.widget({
     }
 
     if ("vconcat" in spec) {
-      var cellH = Math.floor(usableH / Math.max(spec.vconcat.length, 1));
+      var cellH = Math.max(Math.floor(usableH / Math.max(spec.vconcat.length, 1)), 1);
       return Object.assign({}, spec, {
         vconcat: spec.vconcat.map(function(sub) {
           return Object.assign({}, sub, { width: usableW, height: cellH });
@@ -332,8 +332,8 @@ HTMLWidgets.widget({
     if ("concat" in spec) {
       var ncol = Math.max(spec.columns || spec.concat.length || 1, 1);
       var nrow = Math.ceil(spec.concat.length / ncol);
-      var cellW = Math.floor(usableW / Math.max(ncol, 1));
-      var cellH = Math.floor(usableH / Math.max(nrow, 1));
+      var cellW = Math.max(Math.floor(usableW / Math.max(ncol, 1)), 1);
+      var cellH = Math.max(Math.floor(usableH / Math.max(nrow, 1)), 1);
       return Object.assign({}, spec, {
         concat: spec.concat.map(function(sub) {
           return Object.assign({}, sub, { width: cellW, height: cellH });
