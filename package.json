@@ -3,9 +3,6 @@
   "description": "srcts/ is the source of truth for generated assets; run npm run check before committing generated inst/htmlwidgets assets.",
   "private": true,
   "type": "module",
-  "bin": {
-    "tsc": "./srcts/tsc-bin.cjs"
-  },
   "scripts": {
     "build": "node srcts/build.mjs",
     "typecheck": "npm exec -- tsc -p tsconfig.json",
