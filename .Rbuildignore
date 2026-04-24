@@ -13,3 +13,6 @@
 ^package-lock\.json$
 ^tsconfig\.json$
 ^\.worktrees(/|$)
+^srcts(/|$)
+^tools/check-js\.mjs$
+^tools/update-vega\.sh$

@@ -32,21 +32,21 @@ vega_dependencies <- function() {
   list(
     htmltools::htmlDependency(
       name = "vega",
-      version = "6.2.0",
+      version = vega_version,
       src = "htmlwidgets/lib/vega",
       package = "ggsql",
       script = "vega.min.js"
     ),
     htmltools::htmlDependency(
       name = "vega-lite",
-      version = "6.4.2",
+      version = vega_lite_version,
       src = "htmlwidgets/lib/vega-lite",
       package = "ggsql",
       script = "vega-lite.min.js"
     ),
     htmltools::htmlDependency(
       name = "vega-embed",
-      version = "7.1.0",
+      version = vega_embed_version,
       src = "htmlwidgets/lib/vega-embed",
       package = "ggsql",
       script = "vega-embed.min.js"
