@@ -79,7 +79,7 @@ ggsql_metadata(spec)
 #> [1] 17
 #> 
 #> $columns
-#> [1] "stroke"  "opacity" "pos2"    "pos2end" "pos1end" "fill"    "pos1"   
+#> [1] "stroke"  "pos1"    "pos2"    "pos2end" "fill"    "pos1end" "opacity"
 #> 
 #> $layer_count
 #> [1] 1

@@ -22,6 +22,12 @@ duckdb_reader(database = NULL)
 
 A `Reader` object.
 
+## See also
+
+Other readers:
+[`odbc_reader()`](https://r.ggsql.org/reference/odbc_reader.md),
+[`snowflake_reader()`](https://r.ggsql.org/reference/snowflake_reader.md)
+
 ## Examples
 
 ``` r

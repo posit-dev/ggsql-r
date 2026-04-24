@@ -17,8 +17,9 @@ ggsql_execute_sql(reader, query)
 
 - reader:
 
-  A `Reader` object created by
-  [`duckdb_reader()`](https://r.ggsql.org/reference/duckdb_reader.md).
+  A `Reader` object created by e.g.
+  [`duckdb_reader()`](https://r.ggsql.org/reference/duckdb_reader.md) or
+  [`odbc_reader()`](https://r.ggsql.org/reference/odbc_reader.md).
 
 - query:
 

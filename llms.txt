@@ -85,6 +85,10 @@ Rmarkdown/Quarto document so the knitr engine is registered.
   [`ggsql_has_visual()`](https://r.ggsql.org/reference/ggsql_validate.md)
   [`ggsql_is_valid()`](https://r.ggsql.org/reference/ggsql_validate.md)
   : Validate a ggsql query
+- [`odbc_reader()`](https://r.ggsql.org/reference/odbc_reader.md) :
+  Create an ODBC reader
+- [`snowflake_reader()`](https://r.ggsql.org/reference/snowflake_reader.md)
+  : Create a Snowflake reader
 - [`ggsql_metadata()`](https://r.ggsql.org/reference/spec_utility.md)
   [`ggsql_sql()`](https://r.ggsql.org/reference/spec_utility.md)
   [`ggsql_visual()`](https://r.ggsql.org/reference/spec_utility.md)
