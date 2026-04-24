@@ -66,8 +66,10 @@ parse_connection <- function(connection) {
   switch(
     tolower(scheme),
     duckdb = Reader$new(connection),
+    odbc = Reader$new(connection),
+    snowflake = Reader$new(connection),
     cli::cli_abort(
-      "Unsupported connection scheme {.val {scheme}}. Supported schemes: {.val duckdb}."
+      "Unsupported connection scheme {.val {scheme}}. Supported schemes: {.val duckdb}, {.val odbc}, {.val snowflake}."
     )
   )
 }

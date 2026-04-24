@@ -1,6 +1,6 @@
 use extendr_api::prelude::*;
 
-use ggsql::reader::{DuckDBReader as RustDuckDBReader, Reader, Spec};
+use ggsql::reader::{DuckDBReader, OdbcReader, Reader, Spec};
 use ggsql::validate::validate as rust_validate;
 use ggsql::writer::{VegaLiteWriter as RustVegaLiteWriter, Writer};
 use polars::prelude::{DataFrame, IpcStreamReader, IpcStreamWriter, SerReader, SerWriter};
@@ -26,47 +26,96 @@ fn polars_to_ipc_stream(df: &DataFrame) -> std::result::Result<Vec<u8>, String> 
 }
 
 // ============================================================================
-// GgsqlReader — wraps ggsql::reader::DuckDBReader
+// GgsqlReader — dispatches across ggsql::reader backends by URI scheme
 // ============================================================================
+
+enum InnerReader {
+    DuckDB(DuckDBReader),
+    Odbc(OdbcReader),
+}
 
 #[extendr]
 pub struct GgsqlReader {
-    inner: RustDuckDBReader,
+    inner: InnerReader,
 }
 
 #[extendr]
 impl GgsqlReader {
     fn new(connection: &str) -> Self {
-        let inner = RustDuckDBReader::from_connection_string(connection)
-            .expect("Failed to create DuckDB reader");
+        let scheme = connection
+            .split("://")
+            .next()
+            .unwrap_or("")
+            .to_lowercase();
+        let inner = match scheme.as_str() {
+            "duckdb" => InnerReader::DuckDB(
+                DuckDBReader::from_connection_string(connection)
+                    .expect("Failed to create DuckDB reader"),
+            ),
+            "odbc" => InnerReader::Odbc(
+                OdbcReader::from_connection_string(connection)
+                    .expect("Failed to create ODBC reader"),
+            ),
+            "snowflake" => {
+                // Snowflake uses the OdbcReader under the hood. The reader
+                // already has dedicated Snowflake handling: ConnectionName
+                // resolution from ~/.snowflake/connections.toml, Posit
+                // Workbench OAuth token injection, and the SnowflakeDialect
+                // for schema introspection. Rewriting the URI to odbc://
+                // with Driver=Snowflake triggers that path.
+                let params = connection.splitn(2, "://").nth(1).unwrap_or("");
+                let odbc_uri = if params
+                    .to_lowercase()
+                    .contains("driver=")
+                {
+                    format!("odbc://{params}")
+                } else {
+                    format!("odbc://Driver=Snowflake;{params}")
+                };
+                InnerReader::Odbc(
+                    OdbcReader::from_connection_string(&odbc_uri)
+                        .expect("Failed to create Snowflake reader"),
+                )
+            }
+            other => panic!("Unsupported connection scheme: {other}"),
+        };
         Self { inner }
     }
 
     fn register_ipc(&self, name: &str, ipc_bytes: Raw, replace: bool) {
         let df =
             ipc_stream_to_polars(ipc_bytes.as_slice()).expect("Failed to deserialize IPC data");
-        self.inner
-            .register(name, df, replace)
-            .expect("Failed to register table");
+        let result = match &self.inner {
+            InnerReader::DuckDB(r) => r.register(name, df, replace),
+            InnerReader::Odbc(r) => r.register(name, df, replace),
+        };
+        result.expect("Failed to register table");
     }
 
     fn unregister(&self, name: &str) {
-        self.inner
-            .unregister(name)
-            .expect("Failed to unregister table");
+        let result = match &self.inner {
+            InnerReader::DuckDB(r) => r.unregister(name),
+            InnerReader::Odbc(r) => r.unregister(name),
+        };
+        result.expect("Failed to unregister table");
     }
 
     fn execute_sql_ipc(&self, sql: &str) -> Robj {
-        let df = self.inner.execute_sql(sql).expect("SQL execution failed");
+        let df = match &self.inner {
+            InnerReader::DuckDB(r) => r.execute_sql(sql),
+            InnerReader::Odbc(r) => r.execute_sql(sql),
+        }
+        .expect("SQL execution failed");
         let bytes = polars_to_ipc_stream(&df).expect("Failed to serialize DataFrame");
         Raw::from_bytes(&bytes).into_robj()
     }
 
     fn execute(&self, query: &str) -> GgsqlSpec {
-        let spec = self
-            .inner
-            .execute(query)
-            .expect("Query execution failed");
+        let spec = match &self.inner {
+            InnerReader::DuckDB(r) => r.execute(query),
+            InnerReader::Odbc(r) => r.execute(query),
+        }
+        .expect("Query execution failed");
         GgsqlSpec { inner: spec }
     }
 }
