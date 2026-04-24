@@ -1,14 +1,14 @@
 // Test helpers shared by srcts/vega/widget.test.ts and other widget tests.
 //
 // Tests run in Node via `tsx --test`, not in a browser. We use Node's `vm`
-// module to execute the built IIFE bundle in a sandboxed context with mock
-// DOM/HTMLWidgets globals so we can exercise renderValue/resize logic without
-// a real browser.
+// module to execute an in-memory IIFE bundle compiled from srcts/index.ts in a
+// sandboxed context with mock DOM/HTMLWidgets globals so we can exercise
+// renderValue/resize logic without a real browser.
 
 import * as assert from "node:assert/strict";
-import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vm from "node:vm";
+import { buildSync } from "esbuild";
 
 type Resolver<T> = (value: T | PromiseLike<T>) => void;
 type Rejecter = (reason?: unknown) => void;
@@ -120,13 +120,26 @@ class MockHTMLElement {
   }
 }
 
-function widgetBundlePath(): string {
-  return path.join(process.cwd(), "inst", "htmlwidgets", "ggsql_vega.js");
+function widgetEntryPointPath(): string {
+  return path.join(process.cwd(), "srcts", "index.ts");
 }
 
 function runBundleInContext(context: vm.Context): void {
-  const scriptPath = widgetBundlePath();
-  const source = fs.readFileSync(scriptPath, "utf8");
+  const scriptPath = widgetEntryPointPath();
+  const result = buildSync({
+    entryPoints: [scriptPath],
+    bundle: true,
+    format: "iife",
+    platform: "browser",
+    target: ["es2020"],
+    write: false
+  });
+  const source = result.outputFiles[0]?.text;
+
+  if (!source) {
+    throw new Error("expected esbuild to produce an in-memory widget bundle");
+  }
+
   vm.runInNewContext(source, context, { filename: scriptPath });
 }
 

@@ -1,7 +1,31 @@
 import * as assert from "node:assert/strict";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
 import { test } from "node:test";
 
 import { createDeferred, createWidgetTestEnvironment, flushMicrotasks } from "./test-helpers";
+
+test("loads widget tests from TypeScript sources without requiring the built bundle", async () => {
+  const bundlePath = path.join(process.cwd(), "inst", "htmlwidgets", "ggsql_vega.js");
+  const backupPath = `${bundlePath}.bak`;
+
+  await fs.rename(bundlePath, backupPath);
+
+  try {
+    const env = await createWidgetTestEnvironment();
+    env.setEmbed((container, spec) =>
+      Promise.resolve({
+        view: { spec, finalize: () => {} }
+      })
+    );
+
+    const w = env.createInstance(450, 400);
+    w.instance.renderValue({ spec: { mark: "point" } });
+    await flushMicrotasks();
+  } finally {
+    await fs.rename(backupPath, bundlePath);
+  }
+});
 
 test("keeps the layout height while rendering a scaled simple spec", async () => {
   const env = createWidgetTestEnvironment();
