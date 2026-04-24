@@ -81,7 +81,10 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck
+          # local::. works around quarto vignettes failing to find the
+          # package on Windows (quarto-dev/quarto-r#217) by pre-installing
+          # it into the site library before R CMD check runs.
+          extra-packages: ${{ runner.os == 'Windows' && 'any::rcmdcheck, local::.' || 'any::rcmdcheck' }}
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2
