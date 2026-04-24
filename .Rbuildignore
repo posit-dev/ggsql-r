@@ -8,3 +8,8 @@
 ^README\.Rmd$
 ^[.]?air[.]toml$
 ^\.vscode$
+^node_modules(/|$)
+^package\.json$
+^package-lock\.json$
+^tsconfig\.json$
+^\.worktrees(/|$)

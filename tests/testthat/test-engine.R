@@ -35,8 +35,8 @@ test_that("interactive writer keeps the htmlwidget path at narrow figure widths"
 
   out <- run_query(query, fig.width = 2.35, fig.height = 4)
 
-  expect_match(out, "ggsql_viz")
-  expect_match(out, "<ggsql-viz", fixed = TRUE)
+  expect_match(out, "ggsql_vega")
+  expect_match(out, "<ggsql-vega", fixed = TRUE)
 })
 
 test_that("engine can handle a query without visualisation statement", {
@@ -47,6 +47,9 @@ test_that("engine can handle a query without visualisation statement", {
 })
 
 test_that("engine does not return a table when merely creating data", {
+  tmp <- withr::local_tempdir()
+  withr::local_dir(tmp)
+
   query <-
     "COPY (
       SELECT * FROM (VALUES
@@ -233,20 +236,7 @@ test_that("writer defaults to interactive vegalite", {
     "DRAW point"
   )
   out <- run_query(query)
-  expect_match(out, "ggsql_viz")
-})
-
-test_that("interactive writer keeps the htmlwidget path at narrow figure widths", {
-  query <- c(
-    paste0("SELECT mpg, disp FROM '", data_file, "'"),
-    "VISUALISE mpg AS x, disp AS y",
-    "DRAW point"
-  )
-
-  out <- run_query(query, fig.width = 2.35, fig.height = 4)
-
-  expect_match(out, "ggsql_viz")
-  expect_match(out, "<ggsql-viz", fixed = TRUE)
+  expect_match(out, "ggsql_vega")
 })
 
 test_that("writer = 'vegalite_svg' produces SVG output", {
@@ -338,7 +328,7 @@ test_that("we can knit a mixed-chunk document", {
   expect_equal(out_file, out)
   expect_true(file.exists(out))
 
-  # Check that visualization was rendered (contains ggsql-viz custom element)
+  # Check that visualization was rendered (contains ggsql-vega custom element)
   content <- readLines(out)
-  expect_true(any(grepl("ggsql_viz", content)))
+  expect_true(any(grepl("ggsql_vega", content)))
 })

@@ -86,7 +86,7 @@ get_session_reader <- function(session) {
 ggsqlOutput <- function(outputId, width = "100%", height = "400px") {
   htmlwidgets::shinyWidgetOutput(
     outputId,
-    name = "ggsql_viz",
+    name = "ggsql_vega",
     width = width,
     height = height,
     package = "ggsql"
@@ -117,6 +117,10 @@ renderGgsql <- function(
   render_expr <- quote({
     eval_env <- new.env(parent = env)
     value <- eval(expr, envir = eval_env)
+
+    if (inherits(value, "htmlwidget")) {
+      return(value)
+    }
 
     if (inherits(value, "Spec")) {
       json <- ggsql_render(vegalite_writer(), value)

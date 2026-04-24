@@ -1,4 +1,7 @@
 docs
 sandbox/
-inst/htmlwidgets/ggsql-viz.test.js
-inst/htmlwidgets/ggsql-viz-sizing.test.js
+node_modules/
+inst/htmlwidgets/ggsql-vega.test.js
+inst/htmlwidgets/ggsql-vega-sizing.test.js
+.worktrees/
+ggsql_*.tar.gz

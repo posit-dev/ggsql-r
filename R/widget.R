@@ -5,7 +5,7 @@ ggsql_widget <- function(
   height = NULL
 ) {
   widget <- htmlwidgets::createWidget(
-    name = "ggsql_viz",
+    name = "ggsql_vega",
     x = list(
       spec = jsonlite::parse_json(spec_json)
     ),
@@ -57,18 +57,18 @@ vega_dependencies <- function() {
 widget_dependencies <- function() {
   list(
     htmltools::htmlDependency(
-      name = "ggsql-viz-styles",
+      name = "ggsql-vega-styles",
       version = utils::packageVersion("ggsql"),
       src = "htmlwidgets",
       package = "ggsql",
-      stylesheet = "ggsql_viz.css",
+      stylesheet = "ggsql_vega.css",
       all_files = FALSE
     )
   )
 }
 
 #' @noRd
-widget_html.ggsql_viz <- function(
+widget_html.ggsql_vega <- function(
   name,
   package,
   id,
@@ -77,9 +77,12 @@ widget_html.ggsql_viz <- function(
   inline = FALSE,
   ...
 ) {
-  htmltools::tag("ggsql-viz", list(
-    id = id,
-    style = paste0("display:block;", style),
-    class = class
-  ))
+  htmltools::tag(
+    "ggsql-vega",
+    list(
+      id = id,
+      style = paste0("display:block;", style),
+      class = class
+    )
+  )
 }

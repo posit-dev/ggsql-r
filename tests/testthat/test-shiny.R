@@ -14,5 +14,9 @@ test_that("ggsqlOutput owns output sizing", {
   output <- ggsqlOutput("chart", width = "123px", height = "456px")
   output_html <- paste(capture.output(print(output)), collapse = "\n")
 
-  expect_match(output_html, 'style="display:block;width:123px;height:456px;"', fixed = TRUE)
+  expect_match(
+    output_html,
+    'style="display:block;width:123px;height:456px;"',
+    fixed = TRUE
+  )
 })

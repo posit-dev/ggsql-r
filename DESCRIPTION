@@ -45,4 +45,5 @@ Depends:
 VignetteBuilder: quarto
 URL: https://r.ggsql.org, https://github.com/posit-dev/ggsql-r
 Config/Needs/website: tidyverse/tidytemplate
+Config/Needs/js: node
 BugReports: https://github.com/posit-dev/ggsql-r/issues
