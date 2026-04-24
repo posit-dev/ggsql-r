@@ -20,3 +20,18 @@ test_that("ggsqlOutput owns output sizing", {
     fixed = TRUE
   )
 })
+
+test_that("renderGgsql rejects plain SQL strings before execution", {
+  skip_if_not_installed("shiny")
+
+  reader <- duckdb_reader()
+  render_fn <- renderGgsql({
+    "SELECT 1 AS x"
+  }, reader = reader)
+
+  expect_error(
+    environment(render_fn)$origUserFunc(),
+    "`renderGgsql()` only accepts ggsql queries with a `VISUALISE` clause.",
+    fixed = TRUE
+  )
+})

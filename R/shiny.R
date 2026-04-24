@@ -39,7 +39,6 @@ ggsql_session_reader <- function(
     )
   }
   session$userData$.ggsql_reader <- reader
-  
   # Drop the reference so GC can invoke the Rust finalizer on the DuckDB
   # connection. Deterministic $close() doesn't exist yet on Reader.
   session$onSessionEnded(function() {
@@ -145,6 +144,12 @@ renderGgsql <- function(
       )
     }
     query <- resolve_data_refs(value, r, envir = eval_env)
+    validated <- ggsql_validate(query)
+    if (!validated$has_visual) {
+      cli::cli_abort(
+        "{.fn renderGgsql} only accepts ggsql queries with a {.code VISUALISE} clause."
+      )
+    }
     spec <- ggsql_execute(r, query)
     json <- ggsql_render(vegalite_writer(), spec)
     ggsql_widget(json)
