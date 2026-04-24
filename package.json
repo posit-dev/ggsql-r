@@ -10,7 +10,7 @@
     "build": "node srcts/build.mjs",
     "typecheck": "npm exec -- tsc -p tsconfig.json",
     "test": "tsx --test srcts/vega/widget.test.ts srcts/vega/compound_sizing.test.ts",
-    "check": "npm run typecheck && npm run build && npm run test && git diff --exit-code -- inst/htmlwidgets/ggsql_vega.js"
+    "check": "node tools/check-js.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
