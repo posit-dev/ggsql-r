@@ -91,7 +91,7 @@ function readHostBox(el: HTMLElement, width?: number, height?: number): HostBox 
   const hostHeight =
     typeof height === "number" && height > 0
       ? height
-      : styledHeight || el.clientHeight || 0;
+      : el.clientHeight || styledHeight || 0;
 
   return { hostWidth, hostHeight };
 }

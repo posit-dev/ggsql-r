@@ -106,6 +106,53 @@ test("allocateCompoundSize distributes hconcat children across usable width", ()
   assert.equal(result.hconcat[1].width, 410);
 });
 
+test("allocateCompoundSize handles row/column grid facets", () => {
+  const spec = {
+    data: {
+      values: [
+        { r: "a", c: "x" },
+        { r: "a", c: "y" },
+        { r: "a", c: "z" },
+        { r: "b", c: "x" },
+        { r: "b", c: "y" },
+        { r: "b", c: "z" }
+      ]
+    },
+    facet: { row: { field: "r" }, column: { field: "c" } },
+    spec: { mark: "point" }
+  };
+  const layout = { renderWidth: 900, renderHeight: 500 };
+  const result = allocateCompoundChartSize(spec, layout) as {
+    spec: { width: number; height: number };
+  };
+
+  // 3 columns: usable_w=820, 820/3 = 273
+  assert.equal(result.spec.width, 273);
+  // 2 rows: usable_h=380, 380/2 = 190
+  assert.equal(result.spec.height, 190);
+});
+
+test("allocateCompoundSize handles row-only grid facet", () => {
+  const spec = {
+    data: {
+      values: [
+        { r: "a" }, { r: "b" }, { r: "c" }
+      ]
+    },
+    facet: { row: { field: "r" } },
+    spec: { mark: "point" }
+  };
+  const layout = { renderWidth: 900, renderHeight: 500 };
+  const result = allocateCompoundChartSize(spec, layout) as {
+    spec: { width: number; height: number };
+  };
+
+  // No column facet: columnCount=1, full usable width
+  assert.equal(result.spec.width, 820);
+  // 3 rows: usable_h=380, 380/3 = 126
+  assert.equal(result.spec.height, 126);
+});
+
 test("allocateCompoundSize does not mutate the input spec", () => {
   const sub: { mark: string; width?: number } = { mark: "point" };
   const spec: { concat: Array<{ mark: string; width?: number }>; columns: number } = {

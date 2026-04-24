@@ -21,9 +21,17 @@
     const usableHeight = Math.max(layout.renderHeight - OUTER_PAD_Y, 100);
     if ("facet" in spec) {
       const facetSpec = spec;
-      const columnCount = Math.max(facetSpec.columns || 1, 1);
-      const rowCount = inferFacetRows(facetSpec, columnCount);
-      const cellWidth = Math.max(Math.floor(usableWidth / columnCount), 1);
+      const isGridFacet = facetSpec.facet.row != null || facetSpec.facet.column != null;
+      let columnCount;
+      let rowCount;
+      if (isGridFacet) {
+        columnCount = inferDistinctCount(facetSpec, facetSpec.facet.column?.field) || 1;
+        rowCount = inferDistinctCount(facetSpec, facetSpec.facet.row?.field) || 1;
+      } else {
+        columnCount = Math.max(facetSpec.columns || 1, 1);
+        rowCount = inferFacetRows(facetSpec, columnCount);
+      }
+      const cellWidth = Math.max(Math.floor(usableWidth / Math.max(columnCount, 1)), 1);
       const cellHeight = Math.max(Math.floor(usableHeight / Math.max(rowCount, 1)), 1);
       return {
         ...facetSpec,
@@ -98,13 +106,12 @@
     return false;
   }
   function inferFacetRows(spec, columns) {
-    const count = inferFacetCount(spec);
+    const count = inferDistinctCount(spec, spec.facet?.field);
     if (count <= 0) return 1;
     return Math.ceil(count / Math.max(columns, 1));
   }
-  function inferFacetCount(spec) {
-    if (!spec.facet || typeof spec.facet.field !== "string") return 0;
-    const field = spec.facet.field;
+  function inferDistinctCount(spec, field) {
+    if (typeof field !== "string") return 0;
     const values = spec.data && Array.isArray(spec.data.values) ? spec.data.values : null;
     if (!values || values.length === 0) return 0;
     const seen = /* @__PURE__ */ Object.create(null);
@@ -120,7 +127,7 @@
   function readHostBox(el, width, height) {
     const hostWidth = typeof width === "number" && width > 0 ? width : el.clientWidth || 0;
     const styledHeight = typeof el.style.height === "string" && /px$/.test(el.style.height) ? parseFloat(el.style.height) : 0;
-    const hostHeight = typeof height === "number" && height > 0 ? height : styledHeight || el.clientHeight || 0;
+    const hostHeight = typeof height === "number" && height > 0 ? height : el.clientHeight || styledHeight || 0;
     return { hostWidth, hostHeight };
   }
   function buildSimpleLayout(hostWidth, hostHeight) {

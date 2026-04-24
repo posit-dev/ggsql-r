@@ -12,7 +12,7 @@ export type AnyRecord = Record<string, unknown>;
 // any extra keys through unchanged.
 
 type FacetSpec = AnyRecord & {
-  facet: { field?: unknown };
+  facet: { field?: unknown; row?: { field?: unknown }; column?: { field?: unknown } };
   columns?: number;
   spec?: AnyRecord;
   data?: { values?: AnyRecord[] };
@@ -68,9 +68,20 @@ export function allocateCompoundChartSize(
 
   if ("facet" in spec) {
     const facetSpec = spec as FacetSpec;
-    const columnCount = Math.max(facetSpec.columns || 1, 1);
-    const rowCount = inferFacetRows(facetSpec, columnCount);
-    const cellWidth = Math.max(Math.floor(usableWidth / columnCount), 1);
+    const isGridFacet = facetSpec.facet.row != null || facetSpec.facet.column != null;
+
+    let columnCount: number;
+    let rowCount: number;
+
+    if (isGridFacet) {
+      columnCount = inferDistinctCount(facetSpec, facetSpec.facet.column?.field) || 1;
+      rowCount = inferDistinctCount(facetSpec, facetSpec.facet.row?.field) || 1;
+    } else {
+      columnCount = Math.max(facetSpec.columns || 1, 1);
+      rowCount = inferFacetRows(facetSpec, columnCount);
+    }
+
+    const cellWidth = Math.max(Math.floor(usableWidth / Math.max(columnCount, 1)), 1);
     const cellHeight = Math.max(Math.floor(usableHeight / Math.max(rowCount, 1)), 1);
     return {
       ...facetSpec,
@@ -151,17 +162,15 @@ function hasLegend(spec: AnyRecord): boolean {
 }
 
 function inferFacetRows(spec: FacetSpec, columns: number): number {
-  const count = inferFacetCount(spec);
+  const count = inferDistinctCount(spec, spec.facet?.field);
   if (count <= 0) return 1;
   return Math.ceil(count / Math.max(columns, 1));
 }
 
-// Count distinct values of the facet field from inline data so we can
-// estimate the grid dimensions. Returns 0 if the data isn't inline (e.g.,
-// loaded from a URL), in which case we fall back to 1 row.
-function inferFacetCount(spec: FacetSpec): number {
-  if (!spec.facet || typeof spec.facet.field !== "string") return 0;
-  const field = spec.facet.field;
+// Count distinct values of a field from inline data. Returns 0 if the
+// data isn't inline (e.g., loaded from a URL) or the field is missing.
+function inferDistinctCount(spec: FacetSpec, field: unknown): number {
+  if (typeof field !== "string") return 0;
   const values = spec.data && Array.isArray(spec.data.values) ? spec.data.values : null;
   if (!values || values.length === 0) return 0;
 
