@@ -10,7 +10,8 @@ ggsql_execute(reader, query)
 ggsql_execute_sql(reader, query)
 }
 \arguments{
-\item{reader}{A \code{Reader} object created by \code{\link[=duckdb_reader]{duckdb_reader()}}.}
+\item{reader}{A \code{Reader} object created by e.g. \code{\link[=duckdb_reader]{duckdb_reader()}} or
+\code{\link[=odbc_reader]{odbc_reader()}}.}
 
 \item{query}{A ggsql query string (SQL + VISUALISE clause).}
 }

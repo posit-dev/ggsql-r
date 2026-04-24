@@ -202,6 +202,28 @@ test_that("connection option rejects unsupported schemes", {
   query <- "SELECT 1 AS x"
   out <- run_query(query, connection = "mysql://localhost")
   expect_match(out, "Unsupported connection scheme")
+  # The error should advertise all supported schemes
+  expect_match(out, "duckdb")
+  expect_match(out, "odbc")
+  expect_match(out, "snowflake")
+})
+
+test_that("connection option accepts odbc:// scheme", {
+  # We can't connect without a real driver, but the scheme itself must be
+  # accepted by parse_connection() — any failure should come from the driver
+  # layer, not from the scheme parser.
+  query <- "SELECT 1 AS x"
+  out <- run_query(query, connection = "odbc://DSN=__ggsql_nonexistent__")
+  expect_false(grepl("Unsupported connection scheme", out))
+})
+
+test_that("connection option accepts snowflake:// scheme", {
+  query <- "SELECT 1 AS x"
+  out <- run_query(
+    query,
+    connection = "snowflake://ConnectionName=__ggsql_nonexistent__"
+  )
+  expect_false(grepl("Unsupported connection scheme", out))
 })
 
 test_that("connection option rejects invalid format", {

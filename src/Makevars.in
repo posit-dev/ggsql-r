@@ -1,7 +1,14 @@
 TARGET_DIR = ./rust/target
 LIBDIR = $(TARGET_DIR)/@LIBDIR@
 STATLIB = $(LIBDIR)/libggsql.a
-PKG_LIBS = -L$(LIBDIR) -lggsql
+
+# Resolve ODBC driver manager (unixODBC or iODBC). pkg-config picks up the
+# right -L/-l flags when a .pc file is available (e.g. homebrew unixODBC on
+# macOS); otherwise fall back to plain -lodbc, which works on most Linux
+# distros where libodbc.so sits in a default search path.
+ODBC_LIBS = $(shell pkg-config --libs odbc 2>/dev/null || echo -lodbc)
+
+PKG_LIBS = -L$(LIBDIR) -lggsql $(ODBC_LIBS)
 
 all: $(SHLIB) rust_clean
 
