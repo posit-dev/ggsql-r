@@ -1,7 +1,3 @@
 docs
-sandbox/
-node_modules/
-inst/htmlwidgets/ggsql-vega.test.js
-inst/htmlwidgets/ggsql-vega-sizing.test.js
-.worktrees/
-ggsql_*.tar.gz
+node_modules
+.worktrees
