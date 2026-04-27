@@ -16,3 +16,4 @@
 ^srcts(/|$)
 ^tools/check-js\.mjs$
 ^tools/update-vega\.sh$
+CLAUDE\.md

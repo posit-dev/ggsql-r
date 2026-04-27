@@ -70,6 +70,27 @@ cfg <- if (is_debug) "debug" else "release"
   ""
 )
 
+# Resolve ODBC driver manager flags (unixODBC or iODBC). Prefer pkg-config so
+# we pick up -L/-l flags when a .pc file is available (e.g. Homebrew
+# unixODBC on macOS); otherwise fall back to plain -lodbc, which works on
+# most Linux distros where libodbc.so sits in a default search path.
+.odbc_libs <- tryCatch(
+  {
+    out <- suppressWarnings(system2(
+      "pkg-config",
+      c("--libs", "odbc"),
+      stdout = TRUE,
+      stderr = FALSE
+    ))
+    if (!is.null(attr(out, "status")) || length(out) == 0) {
+      "-lodbc"
+    } else {
+      paste(out, collapse = " ")
+    }
+  },
+  error = function(e) "-lodbc"
+)
+
 # read in the Makevars.in file checking
 is_windows <- .Platform[["OS.type"]] == "windows"
 
@@ -102,7 +123,8 @@ new_txt <- gsub("@CRAN_FLAGS@", .cran_flags, mv_txt) |>
   gsub("@CLEAN_TARGET@", .clean_targets, x = _) |>
   gsub("@LIBDIR@", .libdir, x = _) |>
   gsub("@TARGET@", .target, x = _) |>
-  gsub("@PANIC_EXPORTS@", .panic_exports, x = _)
+  gsub("@PANIC_EXPORTS@", .panic_exports, x = _) |>
+  gsub("@ODBC_LIBS@", .odbc_libs, x = _)
 
 message("Writing `", mv_ofp, "`.")
 con <- file(mv_ofp, open = "wb")
