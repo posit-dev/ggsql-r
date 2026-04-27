@@ -484,7 +484,7 @@ ggsql_table_names <- function(reader) {
 #'
 ggsql_execute <- function(reader, query) {
   check_r6(reader, "Reader")
-  check_string(name, allow_empty = FALSE)
+  check_string(query, allow_empty = FALSE)
   spec_ptr <- reader$.ptr$execute(query)
   Spec$new(spec_ptr)
 }
@@ -493,7 +493,7 @@ ggsql_execute <- function(reader, query) {
 #' @export
 ggsql_execute_sql <- function(reader, query) {
   check_r6(reader, "Reader")
-  check_string(name, allow_empty = FALSE)
+  check_string(query, allow_empty = FALSE)
   ipc_bytes <- reader$.ptr$execute_sql_ipc(query)
   ipc_to_df(ipc_bytes)
 }
