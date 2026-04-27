@@ -126,7 +126,9 @@ build_odbc_uri <- function(
   }
   parts <- c(
     if (!is.null(dsn)) paste0("DSN=", dsn),
-    if (!is.null(driver)) paste0("Driver={", gsub("^\\{|\\}$", "", driver), "}"),
+    if (!is.null(driver)) {
+      paste0("Driver={", gsub("^\\{|\\}$", "", driver), "}")
+    },
     if (!is.null(server)) paste0("Server=", server),
     if (!is.null(database)) paste0("Database=", database),
     if (!is.null(uid)) paste0("UID=", uid),
@@ -495,4 +497,3 @@ ggsql_execute_sql <- function(reader, query) {
   ipc_bytes <- reader$.ptr$execute_sql_ipc(query)
   ipc_to_df(ipc_bytes)
 }
-

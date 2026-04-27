@@ -30,5 +30,9 @@ check_r6 <- function(
   arg = caller_arg(x),
   call = caller_env()
 ) {
-  check_custom(x, function(x) R6::is.R6(x) && inherits(x, class), paste0("a ", class, "/R6 object"))
+  check_custom(
+    x,
+    function(x) R6::is.R6(x) && inherits(x, class),
+    paste0("a ", class, "/R6 object")
+  )
 }

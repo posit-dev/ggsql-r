@@ -210,7 +210,13 @@ resolve_data_refs <- function(query, reader, envir) {
       )
     }
 
-    internal_name <- paste0("__", prefix, "_", gsub(".", "_ggsqldot_", name, fixed = TRUE), "__")
+    internal_name <- paste0(
+      "__",
+      prefix,
+      "_",
+      gsub(".", "_ggsqldot_", name, fixed = TRUE),
+      "__"
+    )
     ggsql_register(reader, df, internal_name, replace = TRUE)
     query <- gsub(ref, internal_name, query, fixed = TRUE)
   }
