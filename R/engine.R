@@ -23,7 +23,13 @@ get_engine_reader <- function(connection = NULL) {
     return(ggsql_env$reader)
   }
 
-  # Custom connection: cache by connection string
+  # `custom://` always resolves fresh — the user owns the Reader and may
+  # rebind the variable across chunks; caching would shadow that.
+  if (grepl("^custom://", connection, ignore.case = TRUE)) {
+    return(parse_connection(connection))
+  }
+
+  # Other connections: cache by connection string
   if (is.null(ggsql_env$readers)) {
     ggsql_env$readers <- list()
   }
@@ -68,10 +74,34 @@ parse_connection <- function(connection) {
     duckdb = Reader$new(connection),
     odbc = Reader$new(connection),
     snowflake = Reader$new(connection),
+    custom = resolve_custom_reader(connection),
     cli::cli_abort(
-      "Unsupported connection scheme {.val {scheme}}. Supported schemes: {.val duckdb}, {.val odbc}, {.val snowflake}."
+      "Unsupported connection scheme {.val {scheme}}. Supported schemes: {.val duckdb}, {.val odbc}, {.val snowflake}, {.val custom}."
     )
   )
+}
+
+resolve_custom_reader <- function(connection) {
+  name <- sub("^custom://", "", connection, ignore.case = TRUE)
+  if (!nzchar(name)) {
+    cli::cli_abort(c(
+      "Invalid custom connection {.val {connection}}.",
+      i = "Expected {.code custom://name}, where {.var name} is a {.cls Reader} in the knit environment."
+    ))
+  }
+  env <- knitr::knit_global()
+  if (!exists(name, envir = env, inherits = FALSE)) {
+    cli::cli_abort(
+      "Custom reader {.val {name}} not found in the knit environment."
+    )
+  }
+  obj <- get(name, envir = env, inherits = FALSE)
+  if (!inherits(obj, "Reader")) {
+    cli::cli_abort(
+      "{.var {name}} is not a {.cls Reader} (got {.cls {class(obj)[1]}})."
+    )
+  }
+  obj
 }
 
 # ---------------------------------------------------------------------------
@@ -178,7 +208,7 @@ resolve_data_refs <- function(query, reader) {
       cli::cli_abort("{.code {ref}} does not refer to a data frame.")
     }
 
-    internal_name <- paste0("__", prefix, "_", name, "__")
+    internal_name <- paste0("__", prefix, "_", gsub(".", "_ggsqldot_", name, fixed = TRUE), "__")
     ggsql_register(reader, df, internal_name, replace = TRUE)
     query <- gsub(ref, internal_name, query, fixed = TRUE)
   }

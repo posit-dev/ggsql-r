@@ -76,6 +76,7 @@ reader <- odbc_reader("Driver={SQLite3};Database=:memory:")
 }
 \seealso{
 Other readers: 
+\code{\link{custom_reader}()},
 \code{\link{duckdb_reader}()},
 \code{\link{snowflake_reader}()}
 }

@@ -16,7 +16,7 @@
 #' result
 #'
 ggsql_validate <- function(query) {
-  rlang::check_required(query)
+  check_string(query, allow_empty = FALSE)
   result <- ggsql_validate_impl(query)
 
   result$errors <- jsonlite::fromJSON(result$errors_json)

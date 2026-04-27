@@ -84,6 +84,7 @@ reader <- snowflake_reader(
 }
 \seealso{
 Other readers: 
+\code{\link{custom_reader}()},
 \code{\link{duckdb_reader}()},
 \code{\link{odbc_reader}()}
 }

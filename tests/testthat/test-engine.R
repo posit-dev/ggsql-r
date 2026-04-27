@@ -206,6 +206,7 @@ test_that("connection option rejects unsupported schemes", {
   expect_match(out, "duckdb")
   expect_match(out, "odbc")
   expect_match(out, "snowflake")
+  expect_match(out, "custom")
 })
 
 test_that("connection option accepts odbc:// scheme", {
@@ -215,6 +216,65 @@ test_that("connection option accepts odbc:// scheme", {
   query <- "SELECT 1 AS x"
   out <- run_query(query, connection = "odbc://DSN=__ggsql_nonexistent__")
   expect_false(grepl("Unsupported connection scheme", out))
+})
+
+# --- custom:// connection ---
+
+test_that("custom:// resolves a Reader from the knit environment", {
+  log <- new.env(parent = emptyenv())
+  backend <- duckdb_reader()
+  ggsql_register(backend, mtcars[1:3, c("mpg", "cyl")], "cars")
+  reader <- custom_reader(
+    execute_sql = function(sql) {
+      log$execute_sql <- TRUE
+      ggsql_execute_sql(backend, sql)
+    }
+  )
+  assign("my_reader", reader, envir = knitr::knit_global())
+  on.exit(rm("my_reader", envir = knitr::knit_global()))
+
+  out <- run_query(
+    "SELECT mpg FROM cars LIMIT 2",
+    connection = "custom://my_reader"
+  )
+  expect_true(isTRUE(log$execute_sql))
+  expect_match(out, "mpg")
+})
+
+test_that("custom:// errors when the variable is missing", {
+  out <- run_query(
+    "SELECT 1",
+    connection = "custom://__ggsql_no_such_reader__"
+  )
+  expect_match(out, "not found")
+})
+
+test_that("custom:// errors when the variable is not a Reader", {
+  assign("not_a_reader", 42, envir = knitr::knit_global())
+  on.exit(rm("not_a_reader", envir = knitr::knit_global()))
+
+  out <- run_query("SELECT 1", connection = "custom://not_a_reader")
+  expect_match(out, "Reader")
+})
+
+test_that("custom:// re-resolves on every chunk (no caching)", {
+  count <- 0L
+  make_reader <- function() {
+    count <<- count + 1L
+    backend <- duckdb_reader()
+    custom_reader(
+      execute_sql = function(sql) ggsql_execute_sql(backend, sql)
+    )
+  }
+  assign("rebound_reader", make_reader(), envir = knitr::knit_global())
+  on.exit(rm("rebound_reader", envir = knitr::knit_global()))
+
+  run_query("SELECT 1 AS x", connection = "custom://rebound_reader")
+  # Rebind to a fresh reader and confirm the engine picks it up
+  assign("rebound_reader", make_reader(), envir = knitr::knit_global())
+  run_query("SELECT 2 AS y", connection = "custom://rebound_reader")
+
+  expect_equal(count, 2L)
 })
 
 test_that("connection option accepts snowflake:// scheme", {
