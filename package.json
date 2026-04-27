@@ -1,0 +1,18 @@
+{
+  "name": "ggsql-js",
+  "description": "srcts/ is the source of truth for generated assets; run npm run check before committing generated inst/htmlwidgets assets.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node srcts/build.mjs",
+    "typecheck": "npm exec -- tsc -p tsconfig.json",
+    "test": "tsx --test srcts/vega/widget.test.ts srcts/vega/compound_sizing.test.ts",
+    "check": "node tools/check-js.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}

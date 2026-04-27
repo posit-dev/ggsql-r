@@ -23,6 +23,7 @@ RoxygenNote: 7.3.3
 Imports:
     cli,
     htmltools,
+    htmlwidgets,
     jsonlite,
     knitr,
     nanoarrow,
@@ -35,6 +36,7 @@ Suggests:
     reticulate,
     rmarkdown,
     rsvg,
+    shiny,
     testthat (>= 3.0.0),
     V8,
     withr
@@ -45,4 +47,5 @@ Depends:
 VignetteBuilder: quarto
 URL: https://r.ggsql.org, https://github.com/posit-dev/ggsql-r
 Config/Needs/website: tidyverse/tidytemplate
+Config/Needs/js: node
 BugReports: https://github.com/posit-dev/ggsql-r/issues

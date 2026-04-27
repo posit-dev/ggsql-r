@@ -78,3 +78,33 @@ test_that("spec str method shows metadata", {
   )
   expect_invisible(str(spec))
 })
+
+test_that("ggsql_widget returns an htmlwidget", {
+  reader <- duckdb_reader()
+  ggsql_register(reader, mtcars, "cars")
+  spec <- ggsql_execute(
+    reader,
+    "SELECT * FROM cars VISUALISE mpg AS x, disp AS y DRAW point"
+  )
+  json <- ggsql:::ggsql_render(ggsql:::vegalite_writer(), spec)
+  widget <- ggsql:::ggsql_widget(json)
+  expect_s3_class(widget, "htmlwidget")
+  expect_s3_class(widget, "ggsql_vega")
+  expect_true(!is.null(widget$x$spec))
+})
+
+test_that("ggsql_widget renders with a custom element root", {
+  reader <- duckdb_reader()
+  ggsql_register(reader, mtcars, "cars")
+  spec <- ggsql_execute(
+    reader,
+    "SELECT * FROM cars VISUALISE mpg AS x, disp AS y DRAW point"
+  )
+  json <- ggsql:::ggsql_render(ggsql:::vegalite_writer(), spec)
+  widget <- ggsql:::ggsql_widget(json, width = "225px", height = "360px")
+  html <- htmltools::as.tags(widget, standalone = FALSE)
+
+  expect_match(as.character(html), "<ggsql-vega", fixed = TRUE)
+  expect_match(as.character(html), "width:225px", fixed = TRUE)
+  expect_match(as.character(html), "height:360px", fixed = TRUE)
+})

@@ -11,8 +11,8 @@ Spec <- R6::R6Class(
 
     print = function(...) {
       json <- ggsql_render(vegalite_writer(), self)
-      html <- vegalite_html(json)
-      print(htmltools::browsable(htmltools::HTML(html)))
+      widget <- ggsql_widget(json)
+      print(widget)
     }
   )
 )
@@ -39,22 +39,8 @@ knit_print.Spec <- function(x, ..., inline = FALSE) {
     writer_type,
     vegalite = {
       json <- ggsql_render(vegalite_writer(), x)
-      html <- vegalite_html(
-        json,
-        width = options$fig.width,
-        height = options$fig.height
-      )
-      x <- htmltools::browsable(htmltools::HTML(html))
-      deps <- htmltools::resolveDependencies(htmltools::findDependencies(
-        x,
-        tagify = FALSE
-      ))
-      knitr::asis_output(
-        sprintf("\n```{=html}\n%s\n```\n", x),
-        meta = if (length(deps)) {
-          list(deps)
-        }
-      )
+      widget <- ggsql_widget(json)
+      knitr::knit_print(widget, options = options)
     },
     vegalite_svg = ,
     vegalite_png = {
@@ -140,7 +126,7 @@ ggsql_layer_count <- function(spec) {
 #' @export
 ggsql_layer_data <- function(spec, index = 1L) {
   check_r6(spec, "Spec")
-  check_number_whole(index, min = 1L)
+  check_number_whole(index, min = 1)
   # Convert R 1-based to Rust 0-based
   ipc_bytes <- spec$.ptr$layer_data_ipc(as.integer(index - 1L))
   if (is.null(ipc_bytes)) {
@@ -153,7 +139,7 @@ ggsql_layer_data <- function(spec, index = 1L) {
 #' @export
 ggsql_stat_data <- function(spec, index = 1L) {
   check_r6(spec, "Spec")
-  check_number_whole(index, min = 1L)
+  check_number_whole(index, min = 1)
   ipc_bytes <- spec$.ptr$stat_data_ipc(as.integer(index - 1L))
   if (is.null(ipc_bytes)) {
     return(NULL)
@@ -165,7 +151,7 @@ ggsql_stat_data <- function(spec, index = 1L) {
 #' @export
 ggsql_layer_sql <- function(spec, index = 1L) {
   check_r6(spec, "Spec")
-  check_number_whole(index, min = 1L)
+  check_number_whole(index, min = 1)
   spec$.ptr$get_layer_sql(as.integer(index - 1L))
 }
 
@@ -173,7 +159,7 @@ ggsql_layer_sql <- function(spec, index = 1L) {
 #' @export
 ggsql_stat_sql <- function(spec, index = 1L) {
   check_r6(spec, "Spec")
-  check_number_whole(index, min = 1L)
+  check_number_whole(index, min = 1)
   spec$.ptr$get_stat_sql(as.integer(index - 1L))
 }
 

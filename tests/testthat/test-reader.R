@@ -216,7 +216,9 @@ test_that("snowflake_reader errors with no args", {
 delegating_custom_reader <- function(log = NULL) {
   backend <- duckdb_reader()
   record <- function(hook) {
-    if (is.null(log)) return(invisible())
+    if (is.null(log)) {
+      return(invisible())
+    }
     prev <- if (is.null(log[[hook]])) 0L else log[[hook]]
     log[[hook]] <- prev + 1L
   }
