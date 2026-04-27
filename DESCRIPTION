@@ -28,7 +28,7 @@ Imports:
     knitr,
     nanoarrow,
     R6,
-    rlang,
+    rlang (>= 1.1.0),
     yaml
 Suggests:
     gapminder,

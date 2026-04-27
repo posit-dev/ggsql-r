@@ -20,10 +20,10 @@
 #' df <- ggsql_execute_sql(reader, "SELECT mpg, disp FROM cars LIMIT 5")
 #'
 duckdb_reader <- function(database = NULL) {
+  check_string(database, allow_empty = FALSE, allow_null = TRUE)
   if (is.null(database)) {
     connection <- "duckdb://memory"
   } else {
-    check_string(database)
     if (!file.exists(database)) {
       cli::cli_abort("Database file {.path {database}} does not exist.")
     }
@@ -119,8 +119,8 @@ build_odbc_uri <- function(
   pwd = NULL,
   extras = list()
 ) {
+  check_string(connection_string, allow_empty = FALSE, allow_null = TRUE)
   if (!is.null(connection_string)) {
-    check_string(connection_string)
     conn <- sub("^odbc://", "", connection_string, ignore.case = TRUE)
     return(paste0("odbc://", conn))
   }
@@ -253,8 +253,8 @@ build_snowflake_uri <- function(
   driver = NULL,
   extras = list()
 ) {
+  check_string(connection_string, allow_empty = FALSE, allow_null = TRUE)
   if (!is.null(connection_string)) {
-    check_string(connection_string)
     conn <- sub("^snowflake://", "", connection_string, ignore.case = TRUE)
     return(paste0("snowflake://", conn))
   }
@@ -302,6 +302,76 @@ build_snowflake_uri <- function(
   paste0("snowflake://", paste(parts, collapse = ";"))
 }
 
+#' Create a reader backed by R callbacks
+#'
+#' Construct a reader whose behavior is defined entirely by R functions
+#' you supply. This makes it possible to plug in data sources that aren't
+#' provided natively by ggsql (e.g. an in-memory store, a custom HTTP API,
+#' a DBI connection, etc.) without touching the Rust side.
+#'
+#' Only `execute_sql` is required. If `register` or `unregister` are
+#' omitted, calling [ggsql_register()] / [ggsql_unregister()] on the
+#' returned reader raises an error.
+#'
+#' @param execute_sql A function `function(sql)` that executes `sql` and
+#'   returns either a data frame or a raw vector containing Arrow IPC
+#'   stream bytes (as produced by `nanoarrow::as_nanoarrow_array_stream()`
+#'   / arrow IPC writers).
+#' @param register Optional `function(name, df, replace)` that registers
+#'   `df` as a table named `name`. `replace` is `TRUE` if the caller
+#'   expects an existing table with the same name to be replaced.
+#' @param unregister Optional `function(name)` that removes a previously
+#'   registered table.
+#'
+#' @return A `Reader` object, usable anywhere the other `*_reader()`
+#'   constructors are accepted.
+#'
+#' @export
+#'
+#' @family readers
+#'
+#' @examples
+#' # A trivial reader backed by a list of data frames in an environment,
+#' # delegating the actual SQL engine to an in-memory DuckDB.
+#' store <- new.env(parent = emptyenv())
+#' backend <- duckdb_reader()
+#' reader <- custom_reader(
+#'   execute_sql = function(sql) ggsql_execute_sql(backend, sql),
+#'   register = function(name, df, replace) {
+#'     store[[name]] <- df
+#'     ggsql_register(backend, df, name, replace = replace)
+#'   },
+#'   unregister = function(name) {
+#'     rm(list = name, envir = store)
+#'     ggsql_unregister(backend, name)
+#'   }
+#' )
+#' ggsql_register(reader, mtcars, "cars")
+#' ggsql_execute_sql(reader, "SELECT mpg, disp FROM cars LIMIT 3")
+#'
+custom_reader <- function(execute_sql, register = NULL, unregister = NULL) {
+  check_function(execute_sql)
+  check_function(register, allow_null = TRUE)
+  check_function(unregister, allow_null = TRUE)
+
+  # The Rust side always exchanges tables as Arrow IPC bytes. We wrap the
+  # user's hooks so Rust never sees an R data.frame.
+  exec_wrapped <- function(sql) {
+    out <- execute_sql(sql)
+    if (is.raw(out)) out else df_to_ipc(out)
+  }
+  reg_wrapped <- if (!is.null(register)) {
+    function(name, ipc_bytes, replace) {
+      register(name, ipc_to_df(ipc_bytes), isTRUE(replace))
+      invisible(NULL)
+    }
+  }
+
+  reader <- Reader$new(NULL)
+  reader$.ptr <- GgsqlReader$new_custom(exec_wrapped, reg_wrapped, unregister)
+  reader
+}
+
 #' @noRd
 Reader <- R6::R6Class(
   "Reader",
@@ -310,7 +380,11 @@ Reader <- R6::R6Class(
     .ptr = NULL,
 
     initialize = function(connection) {
-      self$.ptr <- GgsqlReader$new(connection)
+      # `NULL` lets subclasses / factory constructors install a custom
+      # `.ptr` themselves (see `custom_reader()`).
+      if (!is.null(connection)) {
+        self$.ptr <- GgsqlReader$new(connection)
+      }
     },
 
     print = function(...) {
@@ -352,9 +426,9 @@ Reader <- R6::R6Class(
 #' ggsql_table_names(reader)
 #'
 ggsql_register <- function(reader, df, name, replace = FALSE) {
-  rlang::check_required(reader)
-  rlang::check_required(df)
-  rlang::check_required(name)
+  check_r6(reader, "Reader")
+  check_data_frame(df)
+  check_string(name, allow_empty = FALSE)
   ipc_bytes <- df_to_ipc(df)
   reader$.ptr$register_ipc(name, ipc_bytes, replace)
   invisible(reader)
@@ -363,8 +437,8 @@ ggsql_register <- function(reader, df, name, replace = FALSE) {
 #' @rdname ggsql_register
 #' @export
 ggsql_unregister <- function(reader, name) {
-  rlang::check_required(reader)
-  rlang::check_required(name)
+  check_r6(reader, "Reader")
+  check_string(name, allow_empty = FALSE)
   reader$.ptr$unregister(name)
   invisible(reader)
 }
@@ -407,8 +481,8 @@ ggsql_table_names <- function(reader) {
 #' )
 #'
 ggsql_execute <- function(reader, query) {
-  rlang::check_required(reader)
-  rlang::check_required(query)
+  check_r6(reader, "Reader")
+  check_string(name, allow_empty = FALSE)
   spec_ptr <- reader$.ptr$execute(query)
   Spec$new(spec_ptr)
 }
@@ -416,8 +490,8 @@ ggsql_execute <- function(reader, query) {
 #' @rdname ggsql_execute
 #' @export
 ggsql_execute_sql <- function(reader, query) {
-  rlang::check_required(reader)
-  rlang::check_required(query)
+  check_r6(reader, "Reader")
+  check_string(name, allow_empty = FALSE)
   ipc_bytes <- reader$.ptr$execute_sql_ipc(query)
   ipc_to_df(ipc_bytes)
 }

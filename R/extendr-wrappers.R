@@ -18,6 +18,8 @@ GgsqlReader <- new.env(parent = emptyenv())
 
 GgsqlReader$new <- function(connection) .Call(wrap__GgsqlReader__new, connection)
 
+GgsqlReader$new_custom <- function(execute_sql, register, unregister) .Call(wrap__GgsqlReader__new_custom, execute_sql, register, unregister)
+
 GgsqlReader$register_ipc <- function(name, ipc_bytes, replace) invisible(.Call(wrap__GgsqlReader__register_ipc, self, name, ipc_bytes, replace))
 
 GgsqlReader$unregister <- function(name) invisible(.Call(wrap__GgsqlReader__unregister, self, name))

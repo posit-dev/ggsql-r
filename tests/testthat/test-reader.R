@@ -208,3 +208,102 @@ test_that("build_snowflake_uri passes a raw connection string through", {
 test_that("snowflake_reader errors with no args", {
   expect_error(snowflake_reader(), "at least one connection parameter")
 })
+
+# --- custom_reader ---
+
+# Helper: build a custom reader that delegates everything to an in-memory
+# DuckDB. This exercises all three callback paths end-to-end.
+delegating_custom_reader <- function(log = NULL) {
+  backend <- duckdb_reader()
+  record <- function(hook) {
+    if (is.null(log)) return(invisible())
+    prev <- if (is.null(log[[hook]])) 0L else log[[hook]]
+    log[[hook]] <- prev + 1L
+  }
+  custom_reader(
+    execute_sql = function(sql) {
+      record("execute_sql")
+      ggsql_execute_sql(backend, sql)
+    },
+    register = function(name, df, replace) {
+      record("register")
+      ggsql_register(backend, df, name, replace = replace)
+    },
+    unregister = function(name) {
+      record("unregister")
+      ggsql_unregister(backend, name)
+    }
+  )
+}
+
+test_that("custom_reader returns a Reader", {
+  reader <- delegating_custom_reader()
+  expect_s3_class(reader, "Reader")
+})
+
+test_that("custom_reader dispatches register / execute_sql / unregister", {
+  log <- new.env(parent = emptyenv())
+  reader <- delegating_custom_reader(log)
+
+  ggsql_register(reader, mtcars, "cars")
+  df <- ggsql_execute_sql(reader, "SELECT mpg, cyl FROM cars LIMIT 4")
+  expect_s3_class(df, "data.frame")
+  expect_equal(nrow(df), 4)
+  expect_equal(names(df), c("mpg", "cyl"))
+
+  ggsql_unregister(reader, "cars")
+  expect_equal(log$register, 1L)
+  expect_true(log$execute_sql >= 1L)
+  expect_equal(log$unregister, 1L)
+})
+
+test_that("custom_reader works with a VISUALISE query", {
+  reader <- delegating_custom_reader()
+  ggsql_register(reader, mtcars, "cars")
+  spec <- ggsql_execute(
+    reader,
+    "SELECT * FROM cars VISUALISE mpg AS x, disp AS y DRAW point"
+  )
+  expect_s3_class(spec, "Spec")
+})
+
+test_that("custom_reader accepts execute_sql returning raw IPC bytes", {
+  # Bypass the df_to_ipc() wrapper by returning IPC bytes directly.
+  backend <- duckdb_reader()
+  ggsql_register(backend, mtcars, "cars")
+  reader <- custom_reader(
+    execute_sql = function(sql) {
+      df <- ggsql_execute_sql(backend, sql)
+      df_to_ipc(df)
+    }
+  )
+  df <- ggsql_execute_sql(reader, "SELECT mpg FROM cars LIMIT 2")
+  expect_equal(nrow(df), 2)
+})
+
+test_that("custom_reader errors on register when no register hook given", {
+  reader <- custom_reader(
+    execute_sql = function(sql) data.frame(x = 1:3)
+  )
+  expect_error(ggsql_register(reader, mtcars, "cars"))
+})
+
+test_that("custom_reader errors on unregister when no unregister hook given", {
+  reader <- custom_reader(
+    execute_sql = function(sql) data.frame(x = 1:3),
+    register = function(name, df, replace) invisible(NULL)
+  )
+  expect_error(ggsql_unregister(reader, "anything"))
+})
+
+test_that("custom_reader validates its arguments", {
+  expect_error(custom_reader("not a function"), "must be a function")
+  expect_error(
+    custom_reader(function(sql) NULL, register = "nope"),
+    "must be a function"
+  )
+  expect_error(
+    custom_reader(function(sql) NULL, unregister = 42),
+    "must be a function"
+  )
+})

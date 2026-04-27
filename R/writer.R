@@ -57,7 +57,7 @@ Writer <- R6::R6Class(
 #' ggsql_render(vegalite_writer(), spec)
 #'
 ggsql_render <- function(writer, spec) {
-  rlang::check_required(writer)
-  rlang::check_required(spec)
+  check_r6(writer, "Writer")
+  check_r6(spec, "Spec")
   writer$.ptr$render(spec$.ptr)
 }

@@ -27,6 +27,7 @@ df <- ggsql_execute_sql(reader, "SELECT mpg, disp FROM cars LIMIT 5")
 }
 \seealso{
 Other readers: 
+\code{\link{custom_reader}()},
 \code{\link{odbc_reader}()},
 \code{\link{snowflake_reader}()}
 }

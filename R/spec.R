@@ -93,7 +93,7 @@ NULL
 #' @rdname spec_utility
 #' @export
 ggsql_metadata <- function(spec) {
-  rlang::check_required(spec)
+  check_r6(spec, "Spec")
   list(
     rows = spec$.ptr$metadata_rows(),
     columns = spec$.ptr$metadata_columns(),
@@ -104,28 +104,29 @@ ggsql_metadata <- function(spec) {
 #' @rdname spec_utility
 #' @export
 ggsql_sql <- function(spec) {
-  rlang::check_required(spec)
+  check_r6(spec, "Spec")
   spec$.ptr$get_sql()
 }
 
 #' @rdname spec_utility
 #' @export
 ggsql_visual <- function(spec) {
-  rlang::check_required(spec)
+  check_r6(spec, "Spec")
   spec$.ptr$get_visual()
 }
 
 #' @rdname spec_utility
 #' @export
 ggsql_layer_count <- function(spec) {
-  rlang::check_required(spec)
+  check_r6(spec, "Spec")
   spec$.ptr$layer_count()
 }
 
 #' @rdname spec_utility
 #' @export
 ggsql_layer_data <- function(spec, index = 1L) {
-  rlang::check_required(spec)
+  check_r6(spec, "Spec")
+  check_number_whole(index, min = 1L)
   # Convert R 1-based to Rust 0-based
   ipc_bytes <- spec$.ptr$layer_data_ipc(as.integer(index - 1L))
   if (is.null(ipc_bytes)) {
@@ -137,7 +138,8 @@ ggsql_layer_data <- function(spec, index = 1L) {
 #' @rdname spec_utility
 #' @export
 ggsql_stat_data <- function(spec, index = 1L) {
-  rlang::check_required(spec)
+  check_r6(spec, "Spec")
+  check_number_whole(index, min = 1L)
   ipc_bytes <- spec$.ptr$stat_data_ipc(as.integer(index - 1L))
   if (is.null(ipc_bytes)) {
     return(NULL)
@@ -148,21 +150,23 @@ ggsql_stat_data <- function(spec, index = 1L) {
 #' @rdname spec_utility
 #' @export
 ggsql_layer_sql <- function(spec, index = 1L) {
-  rlang::check_required(spec)
+  check_r6(spec, "Spec")
+  check_number_whole(index, min = 1L)
   spec$.ptr$get_layer_sql(as.integer(index - 1L))
 }
 
 #' @rdname spec_utility
 #' @export
 ggsql_stat_sql <- function(spec, index = 1L) {
-  rlang::check_required(spec)
+  check_r6(spec, "Spec")
+  check_number_whole(index, min = 1L)
   spec$.ptr$get_stat_sql(as.integer(index - 1L))
 }
 
 #' @rdname spec_utility
 #' @export
 ggsql_warnings <- function(spec) {
-  rlang::check_required(spec)
+  check_r6(spec, "Spec")
   json <- spec$.ptr$warnings_json()
   warnings_list <- jsonlite::fromJSON(json)
   if (length(warnings_list) == 0) {
