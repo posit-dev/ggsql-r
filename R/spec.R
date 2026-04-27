@@ -126,7 +126,7 @@ ggsql_layer_count <- function(spec) {
 #' @export
 ggsql_layer_data <- function(spec, index = 1L) {
   check_r6(spec, "Spec")
-  check_number_whole(index, min = 1L)
+  check_number_whole(index, min = 1)
   # Convert R 1-based to Rust 0-based
   ipc_bytes <- spec$.ptr$layer_data_ipc(as.integer(index - 1L))
   if (is.null(ipc_bytes)) {
@@ -139,7 +139,7 @@ ggsql_layer_data <- function(spec, index = 1L) {
 #' @export
 ggsql_stat_data <- function(spec, index = 1L) {
   check_r6(spec, "Spec")
-  check_number_whole(index, min = 1L)
+  check_number_whole(index, min = 1)
   ipc_bytes <- spec$.ptr$stat_data_ipc(as.integer(index - 1L))
   if (is.null(ipc_bytes)) {
     return(NULL)
@@ -151,7 +151,7 @@ ggsql_stat_data <- function(spec, index = 1L) {
 #' @export
 ggsql_layer_sql <- function(spec, index = 1L) {
   check_r6(spec, "Spec")
-  check_number_whole(index, min = 1L)
+  check_number_whole(index, min = 1)
   spec$.ptr$get_layer_sql(as.integer(index - 1L))
 }
 
@@ -159,7 +159,7 @@ ggsql_layer_sql <- function(spec, index = 1L) {
 #' @export
 ggsql_stat_sql <- function(spec, index = 1L) {
   check_r6(spec, "Spec")
-  check_number_whole(index, min = 1L)
+  check_number_whole(index, min = 1)
   spec$.ptr$get_stat_sql(as.integer(index - 1L))
 }
 
