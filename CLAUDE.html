@@ -83,21 +83,23 @@ Rust crate src/rust/  (depends on `ggsql` crate + polars + duckdb + extendr-api)
 <td>Enforces Rust MSRV (read from DESCRIPTION <code>SystemRequirements</code>).</td>
 </tr><tr class="even"><td><code>inst/ggsql.xml</code></td>
 <td>KDE-syntax highlighting definition installed for the knitr engine (added to Pandoc via <code>--syntax-definition</code>).</td>
-</tr><tr class="odd"><td><code>inst/test_chunks.qmd</code></td>
+</tr><tr class="odd"><td><code>srcts/</code></td>
+<td>TypeScript source of truth for the htmlwidgets runtime. <code>srcts/index.ts</code> bundles to <code>inst/htmlwidgets/ggsql_vega.js</code>; <code>srcts/vega/*.test.ts</code> covers widget behavior in Node.</td>
+</tr><tr class="even"><td><code>inst/test_chunks.qmd</code></td>
 <td>Fixture Quarto doc used by engine tests.</td>
-</tr><tr class="even"><td><code>vignettes/</code></td>
+</tr><tr class="odd"><td><code>vignettes/</code></td>
 <td>Quarto vignettes (<code>ggsql.qmd</code>, <code>engine.qmd</code>). <code>VignetteBuilder: quarto</code>.</td>
-</tr><tr class="odd"><td><code>tests/testthat/</code></td>
+</tr><tr class="even"><td><code>tests/testthat/</code></td>
 <td>
 <code>test-engine.R</code>, <code>test-reader.R</code>, <code>test-spec.R</code>, <code>test-validate.R</code>, <code>test-writer.R</code> plus <code>_snaps/</code>.</td>
-</tr><tr class="even"><td><code>.github/workflows/</code></td>
+</tr><tr class="odd"><td><code>.github/workflows/</code></td>
 <td>
 <code>R-CMD-check.yaml</code> (macOS, Windows, Ubuntu × several R versions), <code>pkgdown.yaml</code>, <code>test-coverage.yaml</code>, <code>format-suggest.yaml</code>.</td>
-</tr><tr class="odd"><td>
+</tr><tr class="even"><td>
 <code>_pkgdown.yml</code>, <code>pkgdown/</code>
 </td>
 <td>pkgdown site config (deployed to r.ggsql.org).</td>
-</tr><tr class="even"><td><code>air.toml</code></td>
+</tr><tr class="odd"><td><code>air.toml</code></td>
 <td>
 <a href="https://posit-dev.github.io/air/" class="external-link">Air</a> formatter config (empty ⇒ defaults).</td>
 </tr></tbody></table></div>
@@ -112,6 +114,12 @@ Rust crate src/rust/  (depends on `ggsql` crate + polars + duckdb + extendr-api)
 <li>On webR (<code>wasm32-unknown-emscripten</code>) → sets <code>--target</code>, uses <code>panic=abort</code> profile overrides.</li>
 </ul><p>When editing Rust: run <code>devtools::load_all()</code> (triggers <code>configure</code> and recompiles) or <code>rextendr::document()</code> (also regenerates <code>R/extendr-wrappers.R</code> + Rd). A normal <code>R CMD build</code> will rebuild on install.</p>
 <p>Offline/CRAN builds rely on <code>src/rust/vendor.tar.xz</code> (cargo vendor archive). If you bump Rust deps, regenerate the archive so CRAN builds keep working.</p>
+</div>
+<div class="section level2">
+<h2 id="typescript--javascript-assets">TypeScript / JavaScript assets<a class="anchor" aria-label="anchor" href="#typescript--javascript-assets"></a></h2>
+<p><code>srcts/</code> is the source of truth for the browser-side widget code. The built artifact checked into the package is <code>inst/htmlwidgets/ggsql_vega.js</code>.</p>
+<p>The browser-side visualization runtime lives in <code>srcts/</code>, while <code>R/widget.R</code>, <code>R/shiny.R</code>, and <code>R/engine.R</code> are the main R entry points that hand specs off to that runtime. Files under <code>inst/htmlwidgets/</code> are generated package assets or vendored browser dependencies, so prefer editing <code>srcts/</code> and rebuilding rather than patching built assets by hand.</p>
+<p>After making any change under <code>srcts/</code>, rebuild the generated asset with <code>npm run build</code>. Before committing JS/TS changes, run <code>npm run check</code>; it typechecks, rebuilds the bundle, runs the Node tests, and fails if the checked-in generated asset drifted from the TypeScript source.</p>
 </div>
 <div class="section level2">
 <h2 id="the-ffi-contract">The FFI contract<a class="anchor" aria-label="anchor" href="#the-ffi-contract"></a></h2>

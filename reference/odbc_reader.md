@@ -68,6 +68,7 @@ environment variables rather than hard-coding passwords in scripts.
 ## See also
 
 Other readers:
+[`custom_reader()`](https://r.ggsql.org/reference/custom_reader.md),
 [`duckdb_reader()`](https://r.ggsql.org/reference/duckdb_reader.md),
 [`snowflake_reader()`](https://r.ggsql.org/reference/snowflake_reader.md)
 

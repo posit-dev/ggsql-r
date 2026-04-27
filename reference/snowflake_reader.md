@@ -88,6 +88,7 @@ Requires the Snowflake ODBC driver to be installed on the system.
 ## See also
 
 Other readers:
+[`custom_reader()`](https://r.ggsql.org/reference/custom_reader.md),
 [`duckdb_reader()`](https://r.ggsql.org/reference/duckdb_reader.md),
 [`odbc_reader()`](https://r.ggsql.org/reference/odbc_reader.md)
 

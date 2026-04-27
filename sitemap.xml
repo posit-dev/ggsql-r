@@ -8,12 +8,15 @@
 <url><loc>https://r.ggsql.org/articles/index.html</loc></url>
 <url><loc>https://r.ggsql.org/authors.html</loc></url>
 <url><loc>https://r.ggsql.org/index.html</loc></url>
+<url><loc>https://r.ggsql.org/reference/custom_reader.html</loc></url>
 <url><loc>https://r.ggsql.org/reference/duckdb_reader.html</loc></url>
 <url><loc>https://r.ggsql.org/reference/ggsql-package.html</loc></url>
+<url><loc>https://r.ggsql.org/reference/ggsqlOutput.html</loc></url>
 <url><loc>https://r.ggsql.org/reference/ggsql_execute.html</loc></url>
 <url><loc>https://r.ggsql.org/reference/ggsql_register.html</loc></url>
 <url><loc>https://r.ggsql.org/reference/ggsql_render.html</loc></url>
 <url><loc>https://r.ggsql.org/reference/ggsql_save.html</loc></url>
+<url><loc>https://r.ggsql.org/reference/ggsql_session_reader.html</loc></url>
 <url><loc>https://r.ggsql.org/reference/ggsql_validate.html</loc></url>
 <url><loc>https://r.ggsql.org/reference/index.html</loc></url>
 <url><loc>https://r.ggsql.org/reference/odbc_reader.html</loc></url>

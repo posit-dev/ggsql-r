@@ -2,8 +2,13 @@
 
 ## All functions
 
+- [`custom_reader()`](https://r.ggsql.org/reference/custom_reader.md) :
+  Create a reader backed by R callbacks
 - [`duckdb_reader()`](https://r.ggsql.org/reference/duckdb_reader.md) :
   Create a DuckDB reader
+- [`ggsqlOutput()`](https://r.ggsql.org/reference/ggsqlOutput.md)
+  [`renderGgsql()`](https://r.ggsql.org/reference/ggsqlOutput.md) :
+  Shiny bindings for ggsql
 - [`ggsql_execute()`](https://r.ggsql.org/reference/ggsql_execute.md)
   [`ggsql_execute_sql()`](https://r.ggsql.org/reference/ggsql_execute.md)
   : Execute a ggsql query
@@ -16,6 +21,8 @@
   Render a spec with a writer
 - [`ggsql_save()`](https://r.ggsql.org/reference/ggsql_save.md) : Save a
   ggsql spec to a file
+- [`ggsql_session_reader()`](https://r.ggsql.org/reference/ggsql_session_reader.md)
+  : Set the ggsql reader for the current Shiny session
 - [`ggsql_validate()`](https://r.ggsql.org/reference/ggsql_validate.md)
   [`ggsql_has_visual()`](https://r.ggsql.org/reference/ggsql_validate.md)
   [`ggsql_is_valid()`](https://r.ggsql.org/reference/ggsql_validate.md)

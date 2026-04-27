@@ -50,6 +50,7 @@ Homepage: <https://r.ggsql.org> · Repo: posit-dev/ggsql-r
 | `tools/config.R`                         | Detects `DEBUG`, `NOT_CRAN`, webR/wasm target, vendor presence, and emits `src/Makevars{,.win}`.                                                                                                                                                                                                                                   |
 | `tools/msrv.R`                           | Enforces Rust MSRV (read from DESCRIPTION `SystemRequirements`).                                                                                                                                                                                                                                                                   |
 | `inst/ggsql.xml`                         | KDE-syntax highlighting definition installed for the knitr engine (added to Pandoc via `--syntax-definition`).                                                                                                                                                                                                                     |
+| `srcts/`                                 | TypeScript source of truth for the htmlwidgets runtime. `srcts/index.ts` bundles to `inst/htmlwidgets/ggsql_vega.js`; `srcts/vega/*.test.ts` covers widget behavior in Node.                                                                                                                                                       |
 | `inst/test_chunks.qmd`                   | Fixture Quarto doc used by engine tests.                                                                                                                                                                                                                                                                                           |
 | `vignettes/`                             | Quarto vignettes (`ggsql.qmd`, `engine.qmd`). `VignetteBuilder: quarto`.                                                                                                                                                                                                                                                           |
 | `tests/testthat/`                        | `test-engine.R`, `test-reader.R`, `test-spec.R`, `test-validate.R`, `test-writer.R` plus `_snaps/`.                                                                                                                                                                                                                                |
@@ -81,6 +82,24 @@ install.
 Offline/CRAN builds rely on `src/rust/vendor.tar.xz` (cargo vendor
 archive). If you bump Rust deps, regenerate the archive so CRAN builds
 keep working.
+
+## TypeScript / JavaScript assets
+
+`srcts/` is the source of truth for the browser-side widget code. The
+built artifact checked into the package is
+`inst/htmlwidgets/ggsql_vega.js`.
+
+The browser-side visualization runtime lives in `srcts/`, while
+`R/widget.R`, `R/shiny.R`, and `R/engine.R` are the main R entry points
+that hand specs off to that runtime. Files under `inst/htmlwidgets/` are
+generated package assets or vendored browser dependencies, so prefer
+editing `srcts/` and rebuilding rather than patching built assets by
+hand.
+
+After making any change under `srcts/`, rebuild the generated asset with
+`npm run build`. Before committing JS/TS changes, run `npm run check`;
+it typechecks, rebuilds the bundle, runs the Node tests, and fails if
+the checked-in generated asset drifted from the TypeScript source.
 
 ## The FFI contract
 

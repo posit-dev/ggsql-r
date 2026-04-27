@@ -25,6 +25,7 @@ A `Reader` object.
 ## See also
 
 Other readers:
+[`custom_reader()`](https://r.ggsql.org/reference/custom_reader.md),
 [`odbc_reader()`](https://r.ggsql.org/reference/odbc_reader.md),
 [`snowflake_reader()`](https://r.ggsql.org/reference/snowflake_reader.md)
 
