@@ -27,11 +27,13 @@ if (!is_not_cran) {
 
 # we set cran flags only if NOT_CRAN is empty and if
 # the vendored crates are present.
-.cran_flags <- ifelse(
-  !is_not_cran && vendor_exists,
-  "-j 2 --offline",
-  ""
-)
+is_cran_build <- !is_not_cran && vendor_exists
+
+.cran_flags <- ifelse(is_cran_build, "-j 2 --offline", "")
+
+# The vendored tree-sitter-ggsql crate includes a pre-generated parser.c,
+# so we skip running `tree-sitter generate` (which requires tree-sitter-cli).
+.skip_generate <- ifelse(is_cran_build, "GGSQL_SKIP_GENERATE=1 ", "")
 
 # when DEBUG env var is present we use `--debug` build
 .profile <- ifelse(is_debug, "", "--release")
@@ -123,6 +125,7 @@ new_txt <- gsub("@CRAN_FLAGS@", .cran_flags, mv_txt) |>
   gsub("@CLEAN_TARGET@", .clean_targets, x = _) |>
   gsub("@LIBDIR@", .libdir, x = _) |>
   gsub("@TARGET@", .target, x = _) |>
+  gsub("@SKIP_GENERATE@", .skip_generate, x = _) |>
   gsub("@PANIC_EXPORTS@", .panic_exports, x = _) |>
   gsub("@ODBC_LIBS@", .odbc_libs, x = _)
 
