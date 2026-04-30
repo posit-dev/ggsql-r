@@ -58,48 +58,48 @@ Rust crate src/rust/  (depends on `ggsql` crate + polars + duckdb + extendr-api)
 </ul></div>
 <div class="section level2">
 <h2 id="directory-layout">Directory layout<a class="anchor" aria-label="anchor" href="#directory-layout"></a></h2>
-<table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr class="header"><th>Path</th>
+<table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>Path</th>
 <th>Purpose</th>
-</tr></thead><tbody><tr class="odd"><td><code>R/</code></td>
+</tr></thead><tbody><tr><td><code>R/</code></td>
 <td>R source. One file per concern: <code>reader.R</code>, <code>spec.R</code>, <code>writer.R</code>, <code>validate.R</code>, <code>render.R</code> (V8-based server-side Vega-Lite rendering to SVG/PNG), <code>engine.R</code> (knitr engine), <code>convert.R</code> (IPC helpers), <code>extendr-wrappers.R</code> (generated), <code>zzz.R</code> (onLoad via <code><a href="https://rlang.r-lib.org/reference/on_load.html" class="external-link">rlang::on_load</a></code>).</td>
-</tr><tr class="even"><td><code>src/rust/</code></td>
+</tr><tr><td><code>src/rust/</code></td>
 <td>Rust crate (<code>crate-type = staticlib</code>, library name <code>ggsql</code>). <code>src/lib.rs</code> is the single FFI surface. <code>Cargo.toml</code> pins the <code>ggsql</code> crate and polars features. <code>vendor.tar.xz</code> / <code>vendor-config.toml</code> enable offline CRAN builds.</td>
-</tr><tr class="odd"><td>
+</tr><tr><td>
 <code>src/Makevars.in</code>, <code>src/Makevars.win.in</code>
 </td>
 <td>Templates with <code>@PLACEHOLDERS@</code>. <code>tools/config.R</code> fills them in at <code>configure</code> time.</td>
-</tr><tr class="even"><td>
+</tr><tr><td>
 <code>configure</code> / <code>configure.win</code>
 </td>
 <td>Shell wrappers that invoke <code>Rscript tools/config.R</code>.</td>
-</tr><tr class="odd"><td>
+</tr><tr><td>
 <code>cleanup</code> / <code>cleanup.win</code>
 </td>
 <td>
 <code>rm -f src/Makevars{,.win}</code> — run by R CMD build after install.</td>
-</tr><tr class="even"><td><code>tools/config.R</code></td>
+</tr><tr><td><code>tools/config.R</code></td>
 <td>Detects <code>DEBUG</code>, <code>NOT_CRAN</code>, webR/wasm target, vendor presence, and emits <code>src/Makevars{,.win}</code>.</td>
-</tr><tr class="odd"><td><code>tools/msrv.R</code></td>
+</tr><tr><td><code>tools/msrv.R</code></td>
 <td>Enforces Rust MSRV (read from DESCRIPTION <code>SystemRequirements</code>).</td>
-</tr><tr class="even"><td><code>inst/ggsql.xml</code></td>
+</tr><tr><td><code>inst/ggsql.xml</code></td>
 <td>KDE-syntax highlighting definition installed for the knitr engine (added to Pandoc via <code>--syntax-definition</code>).</td>
-</tr><tr class="odd"><td><code>srcts/</code></td>
+</tr><tr><td><code>srcts/</code></td>
 <td>TypeScript source of truth for the htmlwidgets runtime. <code>srcts/index.ts</code> bundles to <code>inst/htmlwidgets/ggsql_vega.js</code>; <code>srcts/vega/*.test.ts</code> covers widget behavior in Node.</td>
-</tr><tr class="even"><td><code>inst/test_chunks.qmd</code></td>
+</tr><tr><td><code>inst/test_chunks.qmd</code></td>
 <td>Fixture Quarto doc used by engine tests.</td>
-</tr><tr class="odd"><td><code>vignettes/</code></td>
+</tr><tr><td><code>vignettes/</code></td>
 <td>Quarto vignettes (<code>ggsql.qmd</code>, <code>engine.qmd</code>). <code>VignetteBuilder: quarto</code>.</td>
-</tr><tr class="even"><td><code>tests/testthat/</code></td>
+</tr><tr><td><code>tests/testthat/</code></td>
 <td>
 <code>test-engine.R</code>, <code>test-reader.R</code>, <code>test-spec.R</code>, <code>test-validate.R</code>, <code>test-writer.R</code> plus <code>_snaps/</code>.</td>
-</tr><tr class="odd"><td><code>.github/workflows/</code></td>
+</tr><tr><td><code>.github/workflows/</code></td>
 <td>
 <code>R-CMD-check.yaml</code> (macOS, Windows, Ubuntu × several R versions), <code>pkgdown.yaml</code>, <code>test-coverage.yaml</code>, <code>format-suggest.yaml</code>.</td>
-</tr><tr class="even"><td>
+</tr><tr><td>
 <code>_pkgdown.yml</code>, <code>pkgdown/</code>
 </td>
 <td>pkgdown site config (deployed to r.ggsql.org).</td>
-</tr><tr class="odd"><td><code>air.toml</code></td>
+</tr><tr><td><code>air.toml</code></td>
 <td>
 <a href="https://posit-dev.github.io/air/" class="external-link">Air</a> formatter config (empty ⇒ defaults).</td>
 </tr></tbody></table></div>

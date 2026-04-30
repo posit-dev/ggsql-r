@@ -1,6 +1,7 @@
 # The ggsql knitr engine
 
 ``` r
+
 library(ggsql)
 ```
 
@@ -145,6 +146,7 @@ shipped with ggsql. Likewise, you can prefix a table with `r:` and `py:`
 to refer to data from the documents R and Python chunks respectively:
 
 ``` r
+
 gapminder_2002 <- gapminder::gapminder[gapminder::gapminder$year == 2002, ]
 ```
 
@@ -181,12 +183,13 @@ GROUP BY species
 ```
 
 ``` r
+
 names(sql)
 #> [1] "may_airquality" "penguin_count"
 
 sql$penguin_count
 #>   number   species
-#> 1     68 Chinstrap
-#> 2    152    Adelie
+#> 1    152    Adelie
+#> 2     68 Chinstrap
 #> 3    124    Gentoo
 ```

@@ -15,6 +15,7 @@ You can install the development version of ggsql from
 [GitHub](https://github.com/) with:
 
 ``` r
+
 # install.packages("pak")
 pak::pak("posit-dev/ggsql")
 ```
@@ -26,6 +27,7 @@ it provides, you can also use it directly in R to execute visual
 queries:
 
 ``` r
+
 library(ggsql)
 
 # Create an in-memory DuckDB reader
