@@ -70,11 +70,13 @@ cfg <- if (is_debug) "debug" else "release"
   ""
 )
 
-# On macOS, forward R's deployment target into the cargo build so cc-rs
+# On macOS, forward a deployment target into the cargo build so cc-rs
 # compiles C/C++ deps (notably libduckdb-sys) with -mmacosx-version-min
-# matching R's link step. Without this, cc defaults to the host SDK's
+# no newer than R's link step. Without this, cc defaults to the host SDK's
 # max version and R CMD check flags a "newer macOS version than being
-# linked" warning.
+# linked" warning. Resolution order: explicit env var, then R's CFLAGS,
+# then a conservative floor of 11.0 (the Apple Silicon minimum) which is
+# older than any modern macOS so the linker won't complain.
 .macos_target <- ""
 if (Sys.info()[["sysname"]] == "Darwin") {
   dt <- Sys.getenv("MACOSX_DEPLOYMENT_TARGET", unset = "")
@@ -96,9 +98,10 @@ if (Sys.info()[["sysname"]] == "Darwin") {
       dt <- sub("-mmacosx-version-min=", "", m[[1]])
     }
   }
-  if (nzchar(dt)) {
-    .macos_target <- paste0("MACOSX_DEPLOYMENT_TARGET=", dt, " ")
+  if (!nzchar(dt)) {
+    dt <- "11.0"
   }
+  .macos_target <- paste0("MACOSX_DEPLOYMENT_TARGET=", dt, " ")
 }
 
 # Resolve ODBC driver manager flags (unixODBC or iODBC). Prefer pkg-config so
