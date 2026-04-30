@@ -39,7 +39,7 @@ $(STATLIB):
 
 	export CARGO_HOME=$(CARGOTMP) && \
 	export PATH="$(PATH):$(HOME)/.cargo/bin" && \
-	@PANIC_EXPORTS@GGSQL_SKIP_GENERATE=1 RUSTFLAGS="$(RUSTFLAGS) --print=native-static-libs" cargo build @CRAN_FLAGS@ --lib @PROFILE@ --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR) @TARGET@
+	@PANIC_EXPORTS@@MACOSX_TARGET@GGSQL_SKIP_GENERATE=1 RUSTFLAGS="$(RUSTFLAGS) --print=native-static-libs" cargo build @CRAN_FLAGS@ --lib @PROFILE@ --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR) @TARGET@
 
 	# Always clean up CARGOTMP
 	rm -Rf $(CARGOTMP);

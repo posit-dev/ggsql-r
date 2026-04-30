@@ -70,6 +70,37 @@ cfg <- if (is_debug) "debug" else "release"
   ""
 )
 
+# On macOS, forward R's deployment target into the cargo build so cc-rs
+# compiles C/C++ deps (notably libduckdb-sys) with -mmacosx-version-min
+# matching R's link step. Without this, cc defaults to the host SDK's
+# max version and R CMD check flags a "newer macOS version than being
+# linked" warning.
+.macos_target <- ""
+if (Sys.info()[["sysname"]] == "Darwin") {
+  dt <- Sys.getenv("MACOSX_DEPLOYMENT_TARGET", unset = "")
+  if (!nzchar(dt)) {
+    cflags <- tryCatch(
+      suppressWarnings(system2(
+        file.path(R.home("bin"), "R"),
+        c("CMD", "config", "CFLAGS"),
+        stdout = TRUE,
+        stderr = FALSE
+      )),
+      error = function(e) character()
+    )
+    m <- regmatches(
+      cflags,
+      regexpr("-mmacosx-version-min=([0-9.]+)", cflags)
+    )
+    if (length(m) > 0) {
+      dt <- sub("-mmacosx-version-min=", "", m[[1]])
+    }
+  }
+  if (nzchar(dt)) {
+    .macos_target <- paste0("MACOSX_DEPLOYMENT_TARGET=", dt, " ")
+  }
+}
+
 # Resolve ODBC driver manager flags (unixODBC or iODBC). Prefer pkg-config so
 # we pick up -L/-l flags when a .pc file is available (e.g. Homebrew
 # unixODBC on macOS); otherwise fall back to plain -lodbc, which works on
@@ -124,6 +155,7 @@ new_txt <- gsub("@CRAN_FLAGS@", .cran_flags, mv_txt) |>
   gsub("@LIBDIR@", .libdir, x = _) |>
   gsub("@TARGET@", .target, x = _) |>
   gsub("@PANIC_EXPORTS@", .panic_exports, x = _) |>
+  gsub("@MACOSX_TARGET@", .macos_target, x = _) |>
   gsub("@ODBC_LIBS@", .odbc_libs, x = _)
 
 message("Writing `", mv_ofp, "`.")
