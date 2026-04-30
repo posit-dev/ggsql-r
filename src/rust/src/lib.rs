@@ -1,28 +1,48 @@
 use extendr_api::prelude::*;
 
+use arrow::ipc::reader::StreamReader;
+use arrow::ipc::writer::StreamWriter;
+use arrow::record_batch::RecordBatch;
 use ggsql::reader::{execute_with_reader, DuckDBReader, OdbcReader, Reader, Spec};
 use ggsql::validate::validate as rust_validate;
 use ggsql::writer::{VegaLiteWriter as RustVegaLiteWriter, Writer};
-use ggsql::GgsqlError;
-use polars::prelude::{DataFrame, IpcStreamReader, IpcStreamWriter, SerReader, SerWriter};
+use ggsql::{DataFrame, GgsqlError};
 use std::io::Cursor;
 
 // ============================================================================
 // IPC Conversion Helpers
 // ============================================================================
 
-fn ipc_stream_to_polars(bytes: &[u8]) -> std::result::Result<DataFrame, String> {
-    let cursor = Cursor::new(bytes);
-    IpcStreamReader::new(cursor)
-        .finish()
-        .map_err(|e| format!("Failed to read Arrow IPC stream: {e}"))
+fn ipc_stream_to_df(bytes: &[u8]) -> std::result::Result<DataFrame, String> {
+    let reader = StreamReader::try_new(Cursor::new(bytes), None)
+        .map_err(|e| format!("Failed to read Arrow IPC stream: {e}"))?;
+    let mut batches: Vec<RecordBatch> = Vec::new();
+    for batch in reader {
+        batches.push(batch.map_err(|e| format!("Failed to read Arrow IPC stream: {e}"))?);
+    }
+    let rb = match batches.len() {
+        0 => return Err("Arrow IPC stream contained no record batches".into()),
+        1 => batches.pop().unwrap(),
+        // nanoarrow on the R side emits a single batch; multi-batch streams
+        // would need concat_batches and the `compute` feature on arrow.
+        _ => return Err("Arrow IPC stream contained multiple record batches; expected one".into()),
+    };
+    Ok(DataFrame::from_record_batch(rb))
 }
 
-fn polars_to_ipc_stream(df: &DataFrame) -> std::result::Result<Vec<u8>, String> {
+fn df_to_ipc_stream(df: &DataFrame) -> std::result::Result<Vec<u8>, String> {
+    let rb = df.inner();
     let mut buffer = Vec::new();
-    IpcStreamWriter::new(&mut buffer)
-        .finish(&mut df.clone())
-        .map_err(|e| format!("Failed to write Arrow IPC stream: {e}"))?;
+    {
+        let mut writer = StreamWriter::try_new(&mut buffer, &rb.schema())
+            .map_err(|e| format!("Failed to write Arrow IPC stream: {e}"))?;
+        writer
+            .write(rb)
+            .map_err(|e| format!("Failed to write Arrow IPC stream: {e}"))?;
+        writer
+            .finish()
+            .map_err(|e| format!("Failed to write Arrow IPC stream: {e}"))?;
+    }
     Ok(buffer)
 }
 
@@ -55,7 +75,7 @@ impl Reader for RCallbackReader {
                 "execute_sql hook must return a data.frame or raw IPC bytes".into(),
             )
         })?;
-        ipc_stream_to_polars(raw.as_slice()).map_err(GgsqlError::ReaderError)
+        ipc_stream_to_df(raw.as_slice()).map_err(GgsqlError::ReaderError)
     }
 
     fn register(&self, name: &str, df: DataFrame, replace: bool) -> ggsql::Result<()> {
@@ -64,7 +84,7 @@ impl Reader for RCallbackReader {
                 "this reader does not support register".into(),
             ));
         };
-        let bytes = polars_to_ipc_stream(&df).map_err(GgsqlError::ReaderError)?;
+        let bytes = df_to_ipc_stream(&df).map_err(GgsqlError::ReaderError)?;
         let raw = Raw::from_bytes(&bytes);
         Self::call_fn(
             fun,
@@ -164,7 +184,7 @@ impl GgsqlReader {
 
     fn register_ipc(&self, name: &str, ipc_bytes: Raw, replace: bool) {
         let df =
-            ipc_stream_to_polars(ipc_bytes.as_slice()).expect("Failed to deserialize IPC data");
+            ipc_stream_to_df(ipc_bytes.as_slice()).expect("Failed to deserialize IPC data");
         let result = match &self.inner {
             InnerReader::DuckDB(r) => r.register(name, df, replace),
             InnerReader::Odbc(r) => r.register(name, df, replace),
@@ -189,7 +209,7 @@ impl GgsqlReader {
             InnerReader::Custom(r) => r.execute_sql(sql),
         }
         .expect("SQL execution failed");
-        let bytes = polars_to_ipc_stream(&df).expect("Failed to serialize DataFrame");
+        let bytes = df_to_ipc_stream(&df).expect("Failed to serialize DataFrame");
         Raw::from_bytes(&bytes).into_robj()
     }
 
@@ -242,7 +262,7 @@ impl GgsqlSpec {
     fn layer_data_ipc(&self, index: i32) -> Nullable<Robj> {
         match self.inner.layer_data(index as usize) {
             Some(df) => {
-                let bytes = polars_to_ipc_stream(df).expect("Failed to serialize layer data");
+                let bytes = df_to_ipc_stream(df).expect("Failed to serialize layer data");
                 Nullable::NotNull(Raw::from_bytes(&bytes).into_robj())
             }
             None => Nullable::Null,
@@ -252,7 +272,7 @@ impl GgsqlSpec {
     fn stat_data_ipc(&self, index: i32) -> Nullable<Robj> {
         match self.inner.stat_data(index as usize) {
             Some(df) => {
-                let bytes = polars_to_ipc_stream(df).expect("Failed to serialize stat data");
+                let bytes = df_to_ipc_stream(df).expect("Failed to serialize stat data");
                 Nullable::NotNull(Raw::from_bytes(&bytes).into_robj())
             }
             None => Nullable::Null,
