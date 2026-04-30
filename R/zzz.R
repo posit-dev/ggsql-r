@@ -2,6 +2,10 @@
   run_on_load()
 }
 
+ .onUnload <- function(libpath) {
+   unlink(file.path(tempdir(), c("penguins.parquet", "airquality.parquet")))
+ }
+
 release_bullets <- function() {
   c(
     "Bump rust version to match package version",

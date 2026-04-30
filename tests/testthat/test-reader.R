@@ -36,6 +36,24 @@ test_that("ggsql_execute_sql returns a data frame", {
   expect_equal(names(df), c("mpg", "disp"))
 })
 
+test_that("ggsql_execute_sql returns NULL for value-less statements", {
+  reader <- duckdb_reader()
+  ggsql_register(reader, mtcars, "cars")
+  expect_null(ggsql_execute_sql(reader, "CREATE VIEW v AS SELECT mpg FROM cars"))
+  expect_null(ggsql_execute_sql(
+    reader,
+    "CREATE TABLE t AS SELECT * FROM cars LIMIT 3"
+  ))
+  expect_null(ggsql_execute_sql(reader, "INSERT INTO t SELECT * FROM cars LIMIT 1"))
+  expect_null(ggsql_execute_sql(reader, "DROP VIEW v"))
+
+  # Empty result sets keep their schema — they're a real value, just zero rows.
+  df <- ggsql_execute_sql(reader, "SELECT mpg FROM cars WHERE 1 = 0")
+  expect_s3_class(df, "data.frame")
+  expect_equal(names(df), "mpg")
+  expect_equal(nrow(df), 0)
+})
+
 test_that("ggsql_execute returns a spec", {
   reader <- duckdb_reader()
   ggsql_register(reader, mtcars, "cars")

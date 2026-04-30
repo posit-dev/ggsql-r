@@ -8,7 +8,8 @@ get_engine_reader <- function(connection = NULL) {
       ggsql_env$reader <- duckdb_reader()
       # Inject the sql proxy into the knit environment for cross-chunk access
       proxy <- new_ggsql_tables()
-      assign("sql", proxy, envir = knitr::knit_global())
+      knit_env <- knitr::knit_global()
+      knit_env[["sql"]] <- proxy
       # Also inject into Python if reticulate is available, so Python chunks
       # can use sql.tablename directly (without the r. prefix)
       if (
@@ -321,14 +322,13 @@ ggsql_engine_eval <- function(query, reader, options) {
 
     # If output.var is set, assign to knit environment instead of rendering
     if (!is.null(options$output.var)) {
-      assign(options$output.var, df, envir = knitr::knit_global())
+      knit_env <- knitr::knit_global()
+      knit_env[[options$output.var]] <- df
       return(knitr::engine_output(options, options$code, ""))
     }
 
-    # Suppress output for DDL/DML statements that return metadata rows
-    # (e.g., COPY TO returns a "Count" column)
-    is_result <- nrow(df) > 0 && ncol(df) > 0 && !identical(names(df), "Count")
-    if (!is_result) {
+    # DDL/DML statements (CREATE, INSERT, ...) return NULL — nothing to render.
+    if (is.null(df) || nrow(df) == 0) {
       return(knitr::engine_output(options, options$code, ""))
     }
     out <- knitr::kable(df)
@@ -345,7 +345,8 @@ ggsql_engine_eval <- function(query, reader, options) {
   if (!is.null(options$output.var)) {
     writer <- vegalite_writer()
     json <- ggsql_render(writer, spec)
-    assign(options$output.var, json, envir = knitr::knit_global())
+    knit_env <- knitr::knit_global()
+    knit_env[[options$output.var]] <- json
     return(knitr::engine_output(options, options$code, ""))
   }
 

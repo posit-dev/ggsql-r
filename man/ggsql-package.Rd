@@ -4,11 +4,11 @@
 \name{ggsql-package}
 \alias{ggsql}
 \alias{ggsql-package}
-\title{ggsql: A SQL extension for declarative data visualization based on the Grammar of Graphics}
+\title{ggsql: Grammar of Graphics for SQL}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-ggsql allows you to write queries that combine SQL data retrieval with visualization specifications in a single, composable syntax.
+Allows you to write queries that combine SQL (Structured Query Language) data retrieval with visualization specifications in a single, composable syntax. The 'ggsql' package binds directly with the 'ggsql' 'Rust' library and allows you to set up readers and writers and execute queries against it. The package also offers 'knitr' and 'shiny' integration allowing the user to use 'ggsql' in both frameworks.
 }
 \seealso{
 Useful links:

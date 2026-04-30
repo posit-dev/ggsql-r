@@ -47,6 +47,7 @@ test_that("engine can handle a query without visualisation statement", {
 })
 
 test_that("engine does not return a table when merely creating data", {
+  skip_if_not_installed("withr")
   tmp <- withr::local_tempdir()
   withr::local_dir(tmp)
 

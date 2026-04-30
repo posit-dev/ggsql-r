@@ -24,12 +24,14 @@ The ggsql R package provides rust bindings to the [ggsql](https://ggsql.org) vis
 
 ## Installation
 
-You can install the development version of ggsql from [GitHub](https://github.com/) with:
+ggsql can be installed from CRAN with:
 
 ``` r
 # install.packages("pak")
-pak::pak("posit-dev/ggsql")
+pak::pak("ggsql")
 ```
+
+To get the development version, change `"ggsql"` to `"posit-dev/ggsql"`.
 
 ## Example
 

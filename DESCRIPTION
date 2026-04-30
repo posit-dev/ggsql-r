@@ -1,5 +1,5 @@
 Package: ggsql
-Title: A SQL extension for declarative data visualization based on the Grammar of Graphics
+Title: Grammar of Graphics for SQL
 Version: 0.3.1
 Authors@R: c(
     person("Thomas Lin", "Pedersen", , "thomas.pedersen@posit.co",
@@ -11,8 +11,12 @@ Authors@R: c(
     person("Posit, PBC", role = c("cph", "fnd"),
            comment = c(ROR = "03wc8by49"))
   )
-Description: ggsql allows you to write queries that combine SQL data retrieval
-  with visualization specifications in a single, composable syntax.
+Description: Allows you to write queries that combine SQL (Structured Query
+  Language) data retrieval with visualization specifications in a single,
+  composable syntax. The 'ggsql' package binds directly with the 'ggsql' 'Rust'
+  library and allows you to set up readers and writers and execute queries
+  against it. The package also offers 'knitr' and 'shiny' integration allowing
+  the user to use 'ggsql' in both frameworks.
 License: MIT + file LICENSE
 Encoding: UTF-8
 SystemRequirements: Cargo (Rust's package manager), rustc,

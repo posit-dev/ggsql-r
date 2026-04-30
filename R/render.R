@@ -25,8 +25,8 @@
 #' spec <- ggsql_execute(reader,
 #'   "SELECT * FROM cars VISUALISE mpg AS x, disp AS y DRAW point"
 #' )
-#' svg_file <- tempfile(fileext = ".svg")
-#' ggsql_save(spec, svg_file)
+#' spec_file <- tempfile(fileext = ".json")
+#' ggsql_save(spec, spec_file)
 #'
 ggsql_save <- function(spec, file, width = 600, height = 400) {
   ext <- tolower(tools::file_ext(file))

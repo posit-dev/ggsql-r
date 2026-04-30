@@ -17,3 +17,7 @@
 ^tools/check-js\.mjs$
 ^tools/update-vega\.sh$
 CLAUDE\.md
+^cran-comments\.md$
+^src/rust/vendor$
+^src/rust/\.cargo$
+^src/rust/target$

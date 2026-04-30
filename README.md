@@ -21,13 +21,14 @@ without having to do anything to pass the data around.
 
 ## Installation
 
-You can install the development version of ggsql from
-[GitHub](https://github.com/) with:
+ggsql can be installed from CRAN with:
 
 ``` r
 # install.packages("pak")
-pak::pak("posit-dev/ggsql")
+pak::pak("ggsql")
 ```
+
+To get the development version, change `"ggsql"` to `"posit-dev/ggsql"`.
 
 ## Example
 

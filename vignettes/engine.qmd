@@ -125,3 +125,13 @@ names(sql)
 
 sql$penguin_count
 ```
+
+```{r}
+#| include: false
+# ggsql caches builtin datasets (penguins, airquality) as parquet files in
+# the OS temp dir (Rust's `env::temp_dir()`, i.e. `$TMPDIR` or `/tmp`) and
+# never cleans them up. Remove them so R CMD check doesn't flag them as
+# detritus in the temp directory.
+tmp_root <- Sys.getenv("TMPDIR", unset = "/tmp")
+unlink(file.path(tmp_root, c("airquality.parquet", "penguins.parquet")))
+```

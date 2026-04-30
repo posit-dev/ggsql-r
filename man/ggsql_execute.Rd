@@ -16,7 +16,8 @@ ggsql_execute_sql(reader, query)
 \item{query}{A ggsql query string (SQL + VISUALISE clause).}
 }
 \value{
-A \code{Spec} object.
+\code{ggsql_execute()} returns \code{Spec} object. \code{ggsql_execute_sql()}
+returns a data frame or \code{NULL}
 }
 \description{
 Parses the query, and execute it against the reader's database. Returns

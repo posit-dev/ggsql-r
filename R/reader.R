@@ -136,7 +136,7 @@ build_odbc_uri <- function(
   )
   if (length(extras) > 0) {
     nm <- names(extras)
-    if (is.null(nm) || any(!nzchar(nm))) {
+    if (is.null(nm) || !all(nzchar(nm))) {
       cli::cli_abort(
         "All {.arg ...} arguments to {.fn odbc_reader} must be named."
       )
@@ -286,7 +286,7 @@ build_snowflake_uri <- function(
   )
   if (length(extras) > 0) {
     nm <- names(extras)
-    if (is.null(nm) || any(!nzchar(nm))) {
+    if (is.null(nm) || !all(nzchar(nm))) {
       cli::cli_abort(
         "All {.arg ...} arguments to {.fn snowflake_reader} must be named."
       )
@@ -357,9 +357,12 @@ custom_reader <- function(execute_sql, register = NULL, unregister = NULL) {
   check_function(unregister, allow_null = TRUE)
 
   # The Rust side always exchanges tables as Arrow IPC bytes. We wrap the
-  # user's hooks so Rust never sees an R data.frame.
+  # user's hooks so Rust never sees an R data.frame. NULL maps to an empty
+  # frame — matches the public `ggsql_execute_sql()` contract for value-less
+  # statements (e.g. CREATE TABLE) that ggsql issues internally.
   exec_wrapped <- function(sql) {
     out <- execute_sql(sql)
+    if (is.null(out)) out <- data.frame()
     if (is.raw(out)) out else df_to_ipc(out)
   }
   reg_wrapped <- if (!is.null(register)) {
@@ -471,7 +474,9 @@ ggsql_table_names <- function(reader) {
 #' @param reader A `Reader` object created by e.g. [duckdb_reader()] or
 #' [odbc_reader()].
 #' @param query A ggsql query string (SQL + VISUALISE clause).
-#' @return A `Spec` object.
+#'
+#' @return `ggsql_execute()` returns `Spec` object. `ggsql_execute_sql()`
+#' returns a data frame or `NULL`
 #'
 #' @export
 #'
@@ -495,5 +500,12 @@ ggsql_execute_sql <- function(reader, query) {
   check_r6(reader, "Reader")
   check_string(query, allow_empty = FALSE)
   ipc_bytes <- reader$.ptr$execute_sql_ipc(query)
-  ipc_to_df(ipc_bytes)
+  df <- ipc_to_df(ipc_bytes)
+  # DDL/DML statements (CREATE, INSERT, COPY, ...) come back as a 0x0 frame.
+  # Surface that as NULL so callers can branch on `is.null()` instead of
+  # poking at dim().
+  if (ncol(df) == 0L) {
+    return(invisible(NULL))
+  }
+  df
 }
