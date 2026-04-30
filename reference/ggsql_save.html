@@ -24,6 +24,7 @@ the rsvg package."><meta property="og:image" content="https://r.ggsql.org/logo.p
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/ggsql.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../articles/engine.html">knitr engine</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://ggsql.org">ggsql.org</a></li>
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -85,8 +86,8 @@ the rsvg package.</p>
 <span class="r-in"><span><span class="va">spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="ggsql_execute.html">ggsql_execute</a></span><span class="op">(</span><span class="va">reader</span>,</span></span>
 <span class="r-in"><span>  <span class="st">"SELECT * FROM cars VISUALISE mpg AS x, disp AS y DRAW point"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">svg_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".svg"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">ggsql_save</span><span class="op">(</span><span class="va">spec</span>, <span class="va">svg_file</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">spec_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".json"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">ggsql_save</span><span class="op">(</span><span class="va">spec</span>, <span class="va">spec_file</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

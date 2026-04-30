@@ -18,12 +18,11 @@
 Source:
 [`DESCRIPTION`](https://github.com/posit-dev/ggsql-r/blob/main/DESCRIPTION)
 
-Pedersen T, Stagg G, van den Brand T (2026). *ggsql: A SQL extension for
-declarative data visualization based on the Grammar of Graphics*. R
-package version 0.3.1, <https://r.ggsql.org>.
+Pedersen T, Stagg G, van den Brand T (2026). *ggsql: Grammar of Graphics
+for SQL*. R package version 0.3.1, <https://r.ggsql.org>.
 
     @Manual{,
-      title = {ggsql: A SQL extension for declarative data visualization based on the Grammar of Graphics},
+      title = {ggsql: Grammar of Graphics for SQL},
       author = {Thomas Lin Pedersen and George Stagg and Teun {van den Brand}},
       year = {2026},
       note = {R package version 0.3.1},

@@ -43,6 +43,6 @@ ggsql_register(reader, mtcars, "cars")
 spec <- ggsql_execute(reader,
   "SELECT * FROM cars VISUALISE mpg AS x, disp AS y DRAW point"
 )
-svg_file <- tempfile(fileext = ".svg")
-ggsql_save(spec, svg_file)
+spec_file <- tempfile(fileext = ".json")
+ggsql_save(spec, spec_file)
 ```

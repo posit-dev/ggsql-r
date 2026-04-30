@@ -27,7 +27,8 @@ ggsql_execute_sql(reader, query)
 
 ## Value
 
-A `Spec` object.
+`ggsql_execute()` returns `Spec` object. `ggsql_execute_sql()` returns a
+data frame or `NULL`
 
 ## Examples
 
