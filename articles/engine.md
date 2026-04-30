@@ -58,8 +58,8 @@ GROUP BY species
 
 | count | species   |
 |------:|:----------|
-|   124 | Gentoo    |
 |   152 | Adelie    |
+|   124 | Gentoo    |
 |    68 | Chinstrap |
 
 ### Chunk options

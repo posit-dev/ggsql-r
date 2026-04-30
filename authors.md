@@ -20,12 +20,12 @@ Source:
 
 Pedersen T, Stagg G, van den Brand T (2026). *ggsql: A SQL extension for
 declarative data visualization based on the Grammar of Graphics*. R
-package version 0.2.7, <https://r.ggsql.org>.
+package version 0.3.0, <https://r.ggsql.org>.
 
     @Manual{,
       title = {ggsql: A SQL extension for declarative data visualization based on the Grammar of Graphics},
       author = {Thomas Lin Pedersen and George Stagg and Teun {van den Brand}},
       year = {2026},
-      note = {R package version 0.2.7},
+      note = {R package version 0.3.0},
       url = {https://r.ggsql.org},
     }
