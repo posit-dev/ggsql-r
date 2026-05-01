@@ -13,5 +13,5 @@ ggsql-vega .ggsql-vega-scale-wrapper {
 }
 
 ggsql-vega .ggsql-vega-container {
-  transform-origin: top left;
+  transform-origin: left center;
 }

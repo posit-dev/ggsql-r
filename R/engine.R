@@ -361,8 +361,7 @@ ggsql_engine_eval <- function(query, reader, options) {
         ))
       }
       writer <- vegalite_writer()
-      json <- ggsql_render(writer, spec)
-      widget <- ggsql_widget(json)
+      widget <- ggsql_widget(writer, spec)
       out <- knitr::knit_print(widget, options = options)
       knitr::knit_meta_add(attr(out, "knit_meta"))
       knitr::engine_output(options, options$code, out = out)
