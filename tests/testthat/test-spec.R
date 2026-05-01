@@ -86,8 +86,7 @@ test_that("ggsql_widget returns an htmlwidget", {
     reader,
     "SELECT * FROM cars VISUALISE mpg AS x, disp AS y DRAW point"
   )
-  json <- ggsql:::ggsql_render(ggsql:::vegalite_writer(), spec)
-  widget <- ggsql:::ggsql_widget(json)
+  widget <- ggsql_widget(vegalite_writer(), spec)
   expect_s3_class(widget, "htmlwidget")
   expect_s3_class(widget, "ggsql_vega")
   expect_true(!is.null(widget$x$spec))
@@ -100,11 +99,65 @@ test_that("ggsql_widget renders with a custom element root", {
     reader,
     "SELECT * FROM cars VISUALISE mpg AS x, disp AS y DRAW point"
   )
-  json <- ggsql:::ggsql_render(ggsql:::vegalite_writer(), spec)
-  widget <- ggsql:::ggsql_widget(json, width = "225px", height = "360px")
+  widget <- ggsql_widget(
+    vegalite_writer(),
+    spec,
+    width = "225px",
+    height = "360px"
+  )
   html <- htmltools::as.tags(widget, standalone = FALSE)
 
   expect_match(as.character(html), "<ggsql-vega", fixed = TRUE)
   expect_match(as.character(html), "width:225px", fixed = TRUE)
   expect_match(as.character(html), "height:360px", fixed = TRUE)
+})
+
+test_that("ggsql_widget stores min_width in the widget payload", {
+  reader <- duckdb_reader()
+  ggsql_register(reader, mtcars, "cars")
+  spec <- ggsql_execute(
+    reader,
+    "SELECT * FROM cars VISUALISE mpg AS x, disp AS y DRAW point"
+  )
+  widget <- ggsql_widget(vegalite_writer(), spec, min_width = 450)
+
+  expect_identical(widget$x$min_width, 450)
+})
+
+test_that("ggsql_widget rejects invalid min_width values", {
+  reader <- duckdb_reader()
+  ggsql_register(reader, mtcars, "cars")
+  spec <- ggsql_execute(
+    reader,
+    "SELECT * FROM cars VISUALISE mpg AS x, disp AS y DRAW point"
+  )
+  invalid_values <- list("wide", c(450, 500), 0, -1, NA_real_)
+
+  for (value in invalid_values) {
+    expect_error(
+      ggsql_widget(vegalite_writer(), spec, min_width = value),
+      "must be `NULL` or a single positive number",
+      fixed = TRUE
+    )
+  }
+})
+
+test_that("ggsql_widget validates writer and spec inputs", {
+  reader <- duckdb_reader()
+  ggsql_register(reader, mtcars, "cars")
+  spec <- ggsql_execute(
+    reader,
+    "SELECT * FROM cars VISUALISE mpg AS x, disp AS y DRAW point"
+  )
+
+  expect_error(
+    ggsql_widget("not-a-writer", spec),
+    "must be a Writer/R6 object",
+    fixed = TRUE
+  )
+  expect_error(
+    ggsql_widget(vegalite_writer(), "not-a-spec"),
+    "must be a Spec/R6 object",
+    fixed = TRUE
+  )
 })

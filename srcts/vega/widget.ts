@@ -23,8 +23,8 @@ type HostBox = {
 };
 
 // Computed layout for a render pass. renderWidth/renderHeight may exceed the
-// host (see MIN_WIDTH below); `scale` is the CSS transform applied to shrink
-// the rendered output back into the host when that happens.
+// host when a min-width threshold is configured; `scale` is the CSS transform
+// applied to shrink the rendered output back into the host when that happens.
 type Layout = HostBox & {
   renderWidth: number;
   renderHeight: number;
@@ -51,6 +51,7 @@ type EmbedToken = Record<string, never>;
 
 export type WidgetValue = {
   spec: AnyRecord;
+  min_width?: number | null;
 };
 
 type WidgetLayoutSpec = AnyRecord & {
@@ -72,11 +73,6 @@ declare global {
   }
 }
 
-// Vega-Lite charts look bad below ~450px (axis labels overlap, legends wrap
-// poorly). Instead of letting Vega render at the true host width, we render
-// at MIN_WIDTH and CSS-scale the result down into the smaller container.
-const MIN_WIDTH = 450;
-
 // Determine the host container size. htmlwidgets passes explicit width/height
 // to resize(), but renderValue() receives only the data payload — no sizing
 // info at all. So on initial render we fall back to el.clientWidth and
@@ -96,13 +92,20 @@ function readHostBox(el: HTMLElement, width?: number, height?: number): HostBox 
   return { hostWidth, hostHeight };
 }
 
-function buildSimpleLayout(hostWidth: number, hostHeight: number): Layout {
+function buildSimpleLayout(
+  hostWidth: number,
+  hostHeight: number,
+  minWidth: number | null
+): Layout {
   return {
     hostWidth,
     hostHeight,
-    renderWidth: Math.max(hostWidth, MIN_WIDTH),
+    renderWidth: minWidth === null ? hostWidth : Math.max(hostWidth, minWidth),
     renderHeight: hostHeight,
-    scale: hostWidth > 0 && hostWidth < MIN_WIDTH ? hostWidth / MIN_WIDTH : 1
+    scale:
+      minWidth !== null && hostWidth > 0 && hostWidth < minWidth
+        ? hostWidth / minWidth
+        : 1
   };
 }
 
@@ -126,6 +129,7 @@ class VegaWidget extends HTMLElement {
     this._embedToken = null;
     this._scaleWrapper = null;
     this._vegaContainer = null;
+    this.classList.remove("ggsql-scaled");
   }
 
   createStructure(): HTMLDivElement {
@@ -153,6 +157,8 @@ class VegaWidget extends HTMLElement {
     this._vegaContainer.style.height = `${layout.renderHeight}px`;
     this._vegaContainer.style.transform =
       layout.scale < 1 ? `scale(${layout.scale})` : "";
+    if (layout.scale < 1) this.classList.add("ggsql-scaled");
+    else this.classList.remove("ggsql-scaled");
   }
 
   buildSimpleSpec(spec: AnyRecord, layout: Layout): WidgetLayoutSpec {
@@ -191,6 +197,7 @@ class VegaWidget extends HTMLElement {
       .runAsync()
       .catch((err: unknown) => {
         if (self._view !== view) return;
+        self.classList.remove("ggsql-scaled");
         self.textContent = `ggsql render error: ${String(err)}`;
       });
   }
@@ -241,29 +248,37 @@ class VegaWidget extends HTMLElement {
       })
       .catch((err: unknown) => {
         if (self._embedToken !== token || self._vegaContainer !== container) return;
+        self.classList.remove("ggsql-scaled");
         self.textContent = `ggsql render error: ${String(err)}`;
       });
   }
 
   renderValue(x: WidgetValue): void {
     const host = readHostBox(this);
+    const minWidth = x.min_width ?? null;
 
     this._value = x;
     this._isCompound = isCompoundSpec(x.spec);
 
     if (this._isCompound) {
-      this.renderCompound(buildSimpleLayout(host.hostWidth, host.hostHeight));
+      this.renderCompound(
+        buildSimpleLayout(host.hostWidth, host.hostHeight, minWidth)
+      );
       return;
     }
 
-    this.renderSimple(buildSimpleLayout(host.hostWidth, host.hostHeight));
+    this.renderSimple(buildSimpleLayout(host.hostWidth, host.hostHeight, minWidth));
   }
 
   resize(width: number, height: number): void {
     if (!this._value) return;
 
     const host = readHostBox(this, width, height);
-    const layout = buildSimpleLayout(host.hostWidth, host.hostHeight);
+    const layout = buildSimpleLayout(
+      host.hostWidth,
+      host.hostHeight,
+      this._value.min_width ?? null
+    );
 
     if (this._isCompound) {
       if (this.hasMaterialCompoundResize(layout)) this.renderCompound(layout);
