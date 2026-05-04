@@ -377,6 +377,32 @@ custom_reader <- function(execute_sql, register = NULL, unregister = NULL) {
   reader
 }
 
+# DuckDB writes `~/.duckdb/...` on demand for extension autoload, persistent
+# secrets, etc. CRAN forbids writing under the user's home directory, so
+# redirect those locations into the R session temp dir. `extension_directory`
+# and `secret_directory` are resolved once from `home_directory` at startup,
+# so a runtime `SET home_directory` alone is too late — they must be set
+# explicitly. If the user already has `~/.duckdb` we leave it alone: they
+# likely have extensions cached from other DuckDB use and would have to
+# re-download every R session if redirected. CRAN check machines never have
+# this directory, so the redirect kicks in there.
+configure_duckdb_paths <- function(reader_ptr) {
+  if (dir.exists(path.expand("~/.duckdb"))) {
+    return(invisible(NULL))
+  }
+  base <- file.path(tempdir(), ".duckdb")
+  base <- normalizePath(base, winslash = "/", mustWork = FALSE)
+  base <- gsub("'", "''", base, fixed = TRUE)
+  reader_ptr$execute_sql_ipc(sprintf("SET home_directory = '%s'", base))
+  reader_ptr$execute_sql_ipc(
+    sprintf("SET extension_directory = '%s/extensions'", base)
+  )
+  reader_ptr$execute_sql_ipc(
+    sprintf("SET secret_directory = '%s/secrets'", base)
+  )
+  invisible(NULL)
+}
+
 #' @noRd
 Reader <- R6::R6Class(
   "Reader",
@@ -389,6 +415,9 @@ Reader <- R6::R6Class(
       # `.ptr` themselves (see `custom_reader()`).
       if (!is.null(connection)) {
         self$.ptr <- GgsqlReader$new(connection)
+        if (startsWith(tolower(connection), "duckdb://")) {
+          configure_duckdb_paths(self$.ptr)
+        }
       }
     },
 
