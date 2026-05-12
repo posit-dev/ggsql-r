@@ -1,0 +1,17 @@
+ggsql-vega {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+ggsql-vega .ggsql-vega-scale-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+ggsql-vega .ggsql-vega-container {
+  transform-origin: top left;
+}
