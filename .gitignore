@@ -3,3 +3,5 @@ node_modules
 .worktrees
 .claude
 src/vendor
+src/rust/vendor.tar.xz
+src/rust/vendor/

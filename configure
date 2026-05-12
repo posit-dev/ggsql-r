@@ -1,3 +1,4 @@
 #!/usr/bin/env sh
 : "${R_HOME=`R RHOME`}"
+"${R_HOME}/bin/Rscript" tools/vendor.R || exit 1
 "${R_HOME}/bin/Rscript" tools/config.R

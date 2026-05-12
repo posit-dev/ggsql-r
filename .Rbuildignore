@@ -19,5 +19,7 @@
 CLAUDE\.md
 ^cran-comments\.md$
 ^src/rust/vendor$
+^src/rust/vendor\.tar\.xz$
 ^src/rust/\.cargo$
 ^src/rust/target$
+^CRAN-SUBMISSION$

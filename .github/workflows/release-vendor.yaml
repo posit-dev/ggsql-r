@@ -1,0 +1,76 @@
+name: Release vendor archive
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag whose GitHub Release should receive the archive
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      NOT_CRAN: "true"
+
+    steps:
+      - name: Resolve target tag
+        id: target
+        run: |
+          TAG="${{ github.event.inputs.tag || github.event.release.tag_name }}"
+          if [ -z "$TAG" ]; then
+            echo "No tag resolved from workflow inputs or release event." >&2
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.target.outputs.tag }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::rextendr
+            local::.
+
+      - name: Build vendor archive
+        run: Rscript -e 'rextendr::vendor_pkgs()'
+
+      - name: Generate sidecar checksum
+        working-directory: src/rust
+        run: |
+          shasum -a 256 vendor.tar.xz | awk '{print $1}' > vendor.tar.xz.sha256
+          cat vendor.tar.xz.sha256
+
+      - name: Upload assets to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ steps.target.outputs.tag }}" \
+            src/rust/vendor.tar.xz \
+            src/rust/vendor.tar.xz.sha256 \
+            --clobber
+
+      - name: End-to-end install smoke test
+        env:
+          NOT_CRAN: ""
+        run: |
+          # Remove the locally built archive so configure must hit the release URL.
+          rm -f src/rust/vendor.tar.xz src/rust/vendor.tar.xz.sha256
+          R CMD build --no-build-vignettes --no-manual .
+          R CMD INSTALL --no-test-load ggsql_*.tar.gz
