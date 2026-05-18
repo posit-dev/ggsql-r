@@ -16,15 +16,15 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/posit-dev/ggsql-r/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/posit-dev/ggsql-r/blob/v0.3.1/DESCRIPTION)
 
 Pedersen T, Stagg G, van den Brand T (2026). *ggsql: Grammar of Graphics
-for SQL*. R package version 0.3.2, <https://r.ggsql.org>.
+for SQL*. R package version 0.3.1, <https://r.ggsql.org>.
 
     @Manual{,
       title = {ggsql: Grammar of Graphics for SQL},
       author = {Thomas Lin Pedersen and George Stagg and Teun {van den Brand}},
       year = {2026},
-      note = {R package version 0.3.2},
+      note = {R package version 0.3.1},
       url = {https://r.ggsql.org},
     }
