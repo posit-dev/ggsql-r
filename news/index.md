@@ -3,9 +3,8 @@
 ## ggsql 0.3.2
 
 - The vendored Rust crate archive is no longer shipped inside the source
-  tarball. It is downloaded once at install time from the matching
-  GitHub Release (`vendor.tar.xz`) and cached via
-  [`tools::R_user_dir()`](https://rdrr.io/r/tools/userdir.html).
+  tarball. It is downloaded at install time from the matching GitHub
+  Release (`vendor.tar.xz`) and verified against a sidecar SHA256.
   Override with `GGSQL_VENDOR_TARBALL`, `GGSQL_VENDOR_URL`, or
   `NOT_CRAN`.
 
