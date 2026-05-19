@@ -8,12 +8,12 @@ hosted as a per-version GitHub Release asset at
 
     https://github.com/posit-dev/ggsql-r/releases/download/v<VERSION>/vendor.tar.xz
 
-and downloaded once at `configure` time by `tools/vendor.R`, then cached in
-`tools::R_user_dir("ggsql", "cache")` so reinstalls do not re-download.
-Integrity is verified against a sidecar `vendor.tar.xz.sha256` published
-alongside the archive on the same Release. Each released package version
-keys its own immutable archive URL, so older releases remain installable
-indefinitely.
+and downloaded at `configure` time by `tools/vendor.R` into the session
+tempdir. Integrity is verified against a sidecar `vendor.tar.xz.sha256`
+published alongside the archive on the same Release. Each released package
+version keys its own immutable archive URL, so older releases remain
+installable indefinitely. Nothing is written outside the package source
+tree or the session tempdir.
 
 Override environment variables are documented in `tools/vendor.R`:
 `GGSQL_VENDOR_TARBALL` (local path), `GGSQL_VENDOR_URL` (mirror), and
