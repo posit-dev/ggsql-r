@@ -104,10 +104,22 @@ if (Sys.info()[["sysname"]] == "Darwin") {
   .macos_target <- paste0("MACOSX_DEPLOYMENT_TARGET=", dt, " ")
 }
 
-# Resolve ODBC driver manager flags (unixODBC or iODBC). Prefer pkg-config so
-# we pick up -L/-l flags when a .pc file is available (e.g. Homebrew
-# unixODBC on macOS); otherwise fall back to plain -lodbc, which works on
-# most Linux distros where libodbc.so sits in a default search path.
+# Resolve ODBC driver manager flags (unixODBC or iODBC). The ggsql Rust
+# crate dynamically loads the ODBC driver manager via `libloading` (dlopen)
+# at runtime, so `-lodbc` is not required at link time -- cargo's
+# `native-static-libs` print confirms this. We therefore default to empty
+# and only add flags when pkg-config can actually locate an ODBC .pc file.
+#
+# When pkg-config finds odbc, we keep only `-L/-l` tokens from its output:
+# some iODBC .pc files (notably the one shipped on the CRAN sonoma-arm64
+# builder) embed a stray `libltdl/libltdlc.la` libtool archive path in
+# their Libs line that the linker can't resolve. Restricting to `-L`/`-l`
+# strips those out.
+#
+# Hard-coding a `-lodbc` fallback would break platforms where libodbc is
+# not on the linker's default search path (e.g. CRAN's R-devel M1 builder),
+# and is unnecessary because the Rust side resolves ODBC symbols at
+# runtime, not link time.
 .odbc_libs <- tryCatch(
   {
     out <- suppressWarnings(system2(
@@ -117,12 +129,15 @@ if (Sys.info()[["sysname"]] == "Darwin") {
       stderr = FALSE
     ))
     if (!is.null(attr(out, "status")) || length(out) == 0) {
-      "-lodbc"
+      ""
     } else {
-      paste(out, collapse = " ")
+      tokens <- unlist(strsplit(paste(out, collapse = " "), "\\s+"))
+      tokens <- tokens[nzchar(tokens)]
+      tokens <- tokens[grepl("^-[Ll]", tokens)]
+      paste(tokens, collapse = " ")
     }
   },
-  error = function(e) "-lodbc"
+  error = function(e) ""
 )
 
 # read in the Makevars.in file checking

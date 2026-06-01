@@ -1,6 +1,6 @@
 Package: ggsql
 Title: Grammar of Graphics for SQL
-Version: 0.3.2
+Version: 0.3.3
 Authors@R: c(
     person("Thomas Lin", "Pedersen", , "thomas.pedersen@posit.co",
            role = c("aut", "cre"), comment = c(ORCID = "0000-0002-5147-4711")),
@@ -19,7 +19,7 @@ Description: Allows you to write queries that combine SQL (Structured Query
   the user to use 'ggsql' in both frameworks.
 License: MIT + file LICENSE
 Encoding: UTF-8
-SystemRequirements: Cargo (Rust's package manager), rustc,
+SystemRequirements: Cargo (Rust's package manager), rustc (>= 1.86),
   ODBC driver manager (unixODBC on Linux, iODBC or unixODBC on macOS;
   built into Windows)
 Roxygen: list(markdown = TRUE)

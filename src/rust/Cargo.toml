@@ -3,9 +3,9 @@
 [package]
 name = 'ggsql-r'
 publish = false
-version = '0.3.2'
+version = '0.3.3'
 edition = '2021'
-rust-version = '1.65'
+rust-version = '1.86'
 
 [lib]
 crate-type = ['staticlib']
@@ -13,7 +13,7 @@ name = 'ggsql'
 
 [dependencies]
 extendr-api = '0.8.1'
-ggsql = { version = "0.3.2", default-features = false, features = ["duckdb", "odbc", "vegalite", "builtin-data"] }
+ggsql = { version = "0.3.3", default-features = false, features = ["duckdb", "odbc", "vegalite", "builtin-data"] }
 arrow = { version = "56", default-features = false, features = ["ipc"] }
 serde_json = "1.0"
 
