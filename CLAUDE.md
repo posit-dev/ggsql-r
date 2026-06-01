@@ -2,6 +2,23 @@
 
 Guidance for working on the **ggsql** R package.
 
+## Hard rules
+
+- **Never commit, push, tag, create releases, or upload release assets
+  without explicit per-action approval from the user.** This includes
+  `git commit`, `git push`, `git tag`, `gh release create`,
+  `gh release upload`, and any other action that modifies shared state
+  on GitHub or the local repo’s history. Read-only inspection
+  (`git status`, `git diff`, `git log`, `gh release view`) is fine.
+- **Never perform any form of CRAN submission preparation or
+  submission.** That includes (but is not limited to)
+  `devtools::submit_cran()`, `devtools::release()`, editing
+  `cran-comments.md`, building the final CRAN tarball for upload,
+  writing the CRAN submission email, or filling out the CRAN web form.
+  Local `R CMD check`/`R CMD build` for diagnostic purposes is fine;
+  anything that produces or sends a deliverable intended for CRAN is
+  not.
+
 ## What this package is
 
 R bindings to the [ggsql](https://ggsql.org) Rust visualization library.

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ggsql</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,13 @@
 <div id="claudemd" class="section level1">
 
 <p>Guidance for working on the <strong>ggsql</strong> R package.</p>
+<div class="section level2">
+<h2 id="hard-rules">Hard rules<a class="anchor" aria-label="anchor" href="#hard-rules"></a></h2>
+<ul><li>
+<strong>Never commit, push, tag, create releases, or upload release assets without explicit per-action approval from the user.</strong> This includes <code>git commit</code>, <code>git push</code>, <code>git tag</code>, <code>gh release create</code>, <code>gh release upload</code>, and any other action that modifies shared state on GitHub or the local repo’s history. Read-only inspection (<code>git status</code>, <code>git diff</code>, <code>git log</code>, <code>gh release view</code>) is fine.</li>
+<li>
+<strong>Never perform any form of CRAN submission preparation or submission.</strong> That includes (but is not limited to) <code>devtools::submit_cran()</code>, <code>devtools::release()</code>, editing <code>cran-comments.md</code>, building the final CRAN tarball for upload, writing the CRAN submission email, or filling out the CRAN web form. Local <code>R CMD check</code>/<code>R CMD build</code> for diagnostic purposes is fine; anything that produces or sends a deliverable intended for CRAN is not.</li>
+</ul></div>
 <div class="section level2">
 <h2 id="what-this-package-is">What this package is<a class="anchor" aria-label="anchor" href="#what-this-package-is"></a></h2>
 <p>R bindings to the <a href="https://ggsql.org" class="external-link">ggsql</a> Rust visualization library. ggsql is “SQL + grammar-of-graphics” — queries look like SQL with extra <code>VISUALIZE ... DRAW ...</code> clauses. This package exposes a ggsql <code>Reader</code> / <code>Spec</code> / <code>Writer</code> pipeline to R, plus a <strong>knitr engine</strong> (<a href="https://r.ggsql.org">ggsql</a> chunks) that makes it usable from Rmarkdown and Quarto, with bidirectional data flow between R, Python, and ggsql chunks.</p>
