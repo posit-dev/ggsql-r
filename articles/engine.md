@@ -59,9 +59,9 @@ GROUP BY species
 
 | count | species   |
 |------:|:----------|
+|    68 | Chinstrap |
 |   152 | Adelie    |
 |   124 | Gentoo    |
-|    68 | Chinstrap |
 
 ### Chunk options
 
@@ -189,7 +189,7 @@ names(sql)
 
 sql$penguin_count
 #>   number   species
-#> 1    124    Gentoo
-#> 2     68 Chinstrap
-#> 3    152    Adelie
+#> 1     68 Chinstrap
+#> 2    152    Adelie
+#> 3    124    Gentoo
 ```
