@@ -1,5 +1,12 @@
 # Changelog
 
+## ggsql 0.3.3
+
+- Declare correct Rust version dependency at 1.86
+- Bump ggsql dependency to 0.3.3
+- Patch ggsql dependency to work with Rust 1.86 so it works on CRAN
+  build machine
+
 ## ggsql 0.3.2
 
 CRAN release: 2026-05-27
