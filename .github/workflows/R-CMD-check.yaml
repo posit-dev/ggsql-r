@@ -84,8 +84,21 @@ jobs:
           # local::. works around quarto vignettes failing to find the
           # package on Windows (quarto-dev/quarto-r#217) by pre-installing
           # it into the site library before R CMD check runs.
-          extra-packages: ${{ runner.os == 'Windows' && 'any::rcmdcheck, local::.' || 'any::rcmdcheck' }}
+          extra-packages: ${{ runner.os == 'Windows' && 'any::rcmdcheck, any::rextendr, local::.' || 'any::rcmdcheck, any::rextendr' }}
           needs: check
+
+      # Build the vendor archive locally and point install-time configure at
+      # it via GGSQL_VENDOR_TARBALL. This makes R CMD check exercise the same
+      # offline cargo build that CRAN does, so the "Downloads Rust crates"
+      # check does not fire as a false positive when the version's GitHub
+      # release does not yet have its vendor.tar.xz asset published.
+      - name: Vendor Rust crates locally
+        shell: Rscript {0}
+        run: rextendr::vendor_pkgs()
+
+      - name: Expose vendor archive to install-time configure
+        shell: bash
+        run: echo "GGSQL_VENDOR_TARBALL=$GITHUB_WORKSPACE/src/rust/vendor.tar.xz" >> "$GITHUB_ENV"
 
       - uses: r-lib/actions/check-r-package@v2
         with:
