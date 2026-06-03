@@ -52,8 +52,9 @@ Homepage: <https://r.ggsql.org> · Repo: posit-dev/ggsql-r
   `ggsql_register`, `ggsql_render`, etc.) are thin R wrappers that
   dispatch through those pointers.
 - `R/extendr-wrappers.R` is **auto-generated** by extendr — do not edit
-  by hand. Regenerate with `rextendr::document()` after changing
-  signatures in `src/rust/src/lib.rs`.
+  by hand. Regenerate with
+  [`rextendr::document()`](https://extendr.github.io/rextendr/reference/document.html)
+  after changing signatures in `src/rust/src/lib.rs`.
 
 ## Directory layout
 
@@ -92,9 +93,10 @@ Environment variables that affect the build (read in `tools/config.R`):
   `panic=abort` profile overrides.
 
 When editing Rust: run `devtools::load_all()` (triggers `configure` and
-recompiles) or `rextendr::document()` (also regenerates
-`R/extendr-wrappers.R` + Rd). A normal `R CMD build` will rebuild on
-install.
+recompiles) or
+[`rextendr::document()`](https://extendr.github.io/rextendr/reference/document.html)
+(also regenerates `R/extendr-wrappers.R` + Rd). A normal `R CMD build`
+will rebuild on install.
 
 Offline/CRAN builds rely on `src/rust/vendor.tar.xz` (cargo vendor
 archive). If you bump Rust deps, regenerate the archive so CRAN builds
@@ -127,8 +129,10 @@ When adding or changing a Rust-exposed function:
     buffers.
 2.  Register the item in the `extendr_module! { ... }` macro at the
     bottom of `lib.rs`.
-3.  Run `rextendr::document()` to regenerate `R/extendr-wrappers.R` and
-    the NAMESPACE `useDynLib` entries.
+3.  Run
+    [`rextendr::document()`](https://extendr.github.io/rextendr/reference/document.html)
+    to regenerate `R/extendr-wrappers.R` and the NAMESPACE `useDynLib`
+    entries.
 4.  Wrap the new binding in a friendly R function in the appropriate
     `R/*.R` file (validate inputs with
     [`rlang::check_required`](https://rlang.r-lib.org/reference/check_required.html)
@@ -222,8 +226,9 @@ Suggested packages used in tests: `gapminder`, `quarto`, `reticulate`,
   only the constructor/accessor functions. `$.GgsqlReader` etc. are
   exported only so extendr dispatch works.
 - Roxygen 7.3.x with markdown. Regenerate docs with
-  `devtools::document()` or `rextendr::document()` (the latter also
-  handles the FFI wrappers).
+  `devtools::document()` or
+  [`rextendr::document()`](https://extendr.github.io/rextendr/reference/document.html)
+  (the latter also handles the FFI wrappers).
 - README is generated: edit `README.Rmd`, then re-knit to produce
   `README.md` and `man/figures/README-*`.
 
@@ -242,7 +247,8 @@ Suggested packages used in tests: `gapminder`, `quarto`, `reticulate`,
 ## Things that tend to trip people up
 
 - Editing `R/extendr-wrappers.R` by hand — it gets clobbered on the next
-  `rextendr::document()`. Put logic in `R/*.R` wrappers or in Rust.
+  [`rextendr::document()`](https://extendr.github.io/rextendr/reference/document.html).
+  Put logic in `R/*.R` wrappers or in Rust.
 - Forgetting to rerun the generator after changing Rust signatures —
   you’ll get `function not found` or argument-count errors at runtime.
 - The `configure` script writes `src/Makevars` on every build; the

@@ -31,7 +31,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="logo.png" class="logo" alt=""><h1>CLAUDE.md</h1>
-      <small class="dont-index">Source: <a href="https://github.com/posit-dev/ggsql-r/blob/v0.3.3/CLAUDE.md" class="external-link"><code>CLAUDE.md</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/posit-dev/ggsql-r/blob/main/CLAUDE.md" class="external-link"><code>CLAUDE.md</code></a></small>
     </div>
 
 <div id="claudemd" class="section level1">
@@ -62,7 +62,7 @@ Rust crate src/rust/  (depends on `ggsql` crate + polars + duckdb + extendr-api)
 <ul><li>Data crosses the FFI as <strong>Arrow IPC stream bytes</strong> — never as R lists. R side uses <code>nanoarrow</code> (<code>R/convert.R</code> → <code>df_to_ipc</code> / <code>ipc_to_df</code>); Rust side uses <code>polars</code> <code>IpcStreamReader</code> / <code>IpcStreamWriter</code>.</li>
 <li>The three public R6 classes (<code>Reader</code>, <code>Spec</code>, <code>Writer</code> in <code>R/reader.R</code>, <code>R/spec.R</code>, <code>R/writer.R</code>) each hold a <code>.ptr</code> to a Rust-owned struct (<code>GgsqlReader</code>, <code>GgsqlSpec</code>, <code>GgsqlWriter</code> declared in <code>src/rust/src/lib.rs</code>). The exported functions (<code>ggsql_execute</code>, <code>ggsql_register</code>, <code>ggsql_render</code>, etc.) are thin R wrappers that dispatch through those pointers.</li>
 <li>
-<code>R/extendr-wrappers.R</code> is <strong>auto-generated</strong> by extendr — do not edit by hand. Regenerate with <code>rextendr::document()</code> after changing signatures in <code>src/rust/src/lib.rs</code>.</li>
+<code>R/extendr-wrappers.R</code> is <strong>auto-generated</strong> by extendr — do not edit by hand. Regenerate with <code><a href="https://extendr.github.io/rextendr/reference/document.html" class="external-link">rextendr::document()</a></code> after changing signatures in <code>src/rust/src/lib.rs</code>.</li>
 </ul></div>
 <div class="section level2">
 <h2 id="directory-layout">Directory layout<a class="anchor" aria-label="anchor" href="#directory-layout"></a></h2>
@@ -120,7 +120,7 @@ Rust crate src/rust/  (depends on `ggsql` crate + polars + duckdb + extendr-api)
 <li>
 <code>NOT_CRAN</code> set → omit CRAN-required <code>-j 2 --offline</code> flags.</li>
 <li>On webR (<code>wasm32-unknown-emscripten</code>) → sets <code>--target</code>, uses <code>panic=abort</code> profile overrides.</li>
-</ul><p>When editing Rust: run <code>devtools::load_all()</code> (triggers <code>configure</code> and recompiles) or <code>rextendr::document()</code> (also regenerates <code>R/extendr-wrappers.R</code> + Rd). A normal <code>R CMD build</code> will rebuild on install.</p>
+</ul><p>When editing Rust: run <code>devtools::load_all()</code> (triggers <code>configure</code> and recompiles) or <code><a href="https://extendr.github.io/rextendr/reference/document.html" class="external-link">rextendr::document()</a></code> (also regenerates <code>R/extendr-wrappers.R</code> + Rd). A normal <code>R CMD build</code> will rebuild on install.</p>
 <p>Offline/CRAN builds rely on <code>src/rust/vendor.tar.xz</code> (cargo vendor archive). If you bump Rust deps, regenerate the archive so CRAN builds keep working.</p>
 </div>
 <div class="section level2">
@@ -134,7 +134,7 @@ Rust crate src/rust/  (depends on `ggsql` crate + polars + duckdb + extendr-api)
 <p>When adding or changing a Rust-exposed function:</p>
 <ol style="list-style-type: decimal"><li>Edit <code>src/rust/src/lib.rs</code> — add an <code>#[extendr]</code> fn or impl method. Return <code>Robj</code>/<code>Nullable&lt;…&gt;</code> for nullable values; use <code>Raw</code> for byte buffers.</li>
 <li>Register the item in the <code>extendr_module! { ... }</code> macro at the bottom of <code>lib.rs</code>.</li>
-<li>Run <code>rextendr::document()</code> to regenerate <code>R/extendr-wrappers.R</code> and the NAMESPACE <code>useDynLib</code> entries.</li>
+<li>Run <code><a href="https://extendr.github.io/rextendr/reference/document.html" class="external-link">rextendr::document()</a></code> to regenerate <code>R/extendr-wrappers.R</code> and the NAMESPACE <code>useDynLib</code> entries.</li>
 <li>Wrap the new binding in a friendly R function in the appropriate <code>R/*.R</code> file (validate inputs with <code><a href="https://rlang.r-lib.org/reference/check_required.html" class="external-link">rlang::check_required</a></code> / <code>check_string</code>, error with <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_abort</a></code>). Keep the pattern: exported R fn → R6 method → <code>.ptr$method(...)</code> call.</li>
 </ol><p>Data transfer: convert data frames to Arrow IPC with <code>df_to_ipc()</code> before crossing the boundary, and back with <code>ipc_to_df()</code>. Factors are coerced to character in <code>df_to_ipc</code> because nanoarrow doesn’t support dictionary IPC encoding — keep this in mind when debugging column-type surprises.</p>
 <p>The Rust side currently uses <code>.expect("...")</code> liberally; errors surface to R as panics caught by extendr and reported as R errors. Prefer improving error messages in the R wrapper with <code>try_fetch</code> / <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_abort</a></code> rather than propagating Rust-style messages.</p>
@@ -173,7 +173,7 @@ Rust crate src/rust/  (depends on `ggsql` crate + polars + duckdb + extendr-api)
 <li>Argument validation at public boundaries: <code><a href="https://rlang.r-lib.org/reference/check_required.html" class="external-link">rlang::check_required()</a></code>, <code><a href="https://rlang.r-lib.org/reference/check_type_scalar.html" class="external-link">rlang::check_string()</a></code>, <code><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">rlang::check_installed()</a></code>.</li>
 <li>R6 classes are <strong>not</strong> cloneable (<code>cloneable = FALSE</code>) because they hold external pointers; never add <code>clone()</code> calls.</li>
 <li>Do not export the <code>Reader</code>/<code>Spec</code>/<code>Writer</code> R6 classes themselves — only the constructor/accessor functions. <code>$.GgsqlReader</code> etc. are exported only so extendr dispatch works.</li>
-<li>Roxygen 7.3.x with markdown. Regenerate docs with <code>devtools::document()</code> or <code>rextendr::document()</code> (the latter also handles the FFI wrappers).</li>
+<li>Roxygen 7.3.x with markdown. Regenerate docs with <code>devtools::document()</code> or <code><a href="https://extendr.github.io/rextendr/reference/document.html" class="external-link">rextendr::document()</a></code> (the latter also handles the FFI wrappers).</li>
 <li>README is generated: edit <code>README.Rmd</code>, then re-knit to produce <code>README.md</code> and <code>man/figures/README-*</code>.</li>
 </ul></div>
 <div class="section level2">
@@ -187,7 +187,7 @@ Rust crate src/rust/  (depends on `ggsql` crate + polars + duckdb + extendr-api)
 </ul></div>
 <div class="section level2">
 <h2 id="things-that-tend-to-trip-people-up">Things that tend to trip people up<a class="anchor" aria-label="anchor" href="#things-that-tend-to-trip-people-up"></a></h2>
-<ul><li>Editing <code>R/extendr-wrappers.R</code> by hand — it gets clobbered on the next <code>rextendr::document()</code>. Put logic in <code>R/*.R</code> wrappers or in Rust.</li>
+<ul><li>Editing <code>R/extendr-wrappers.R</code> by hand — it gets clobbered on the next <code><a href="https://extendr.github.io/rextendr/reference/document.html" class="external-link">rextendr::document()</a></code>. Put logic in <code>R/*.R</code> wrappers or in Rust.</li>
 <li>Forgetting to rerun the generator after changing Rust signatures — you’ll get <code>function not found</code> or argument-count errors at runtime.</li>
 <li>The <code>configure</code> script writes <code>src/Makevars</code> on every build; the <code>cleanup</code> script removes it afterwards. If you see a stale <code>src/Makevars</code> in git status, that’s expected — it’s gitignored/buildignored.</li>
 <li>

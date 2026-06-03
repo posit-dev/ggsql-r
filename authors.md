@@ -16,7 +16,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/posit-dev/ggsql-r/blob/v0.3.3/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/posit-dev/ggsql-r/blob/main/DESCRIPTION)
 
 Pedersen T, Stagg G, van den Brand T (2026). *ggsql: Grammar of Graphics
 for SQL*. R package version 0.3.3, <https://r.ggsql.org>.
