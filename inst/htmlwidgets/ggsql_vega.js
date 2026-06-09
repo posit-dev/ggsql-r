@@ -123,20 +123,19 @@
   }
 
   // srcts/vega/widget.ts
-  var MIN_WIDTH = 450;
   function readHostBox(el, width, height) {
     const hostWidth = typeof width === "number" && width > 0 ? width : el.clientWidth || 0;
     const styledHeight = typeof el.style.height === "string" && /px$/.test(el.style.height) ? parseFloat(el.style.height) : 0;
     const hostHeight = typeof height === "number" && height > 0 ? height : el.clientHeight || styledHeight || 0;
     return { hostWidth, hostHeight };
   }
-  function buildSimpleLayout(hostWidth, hostHeight) {
+  function buildSimpleLayout(hostWidth, hostHeight, minWidth) {
     return {
       hostWidth,
       hostHeight,
-      renderWidth: Math.max(hostWidth, MIN_WIDTH),
+      renderWidth: minWidth === null ? hostWidth : Math.max(hostWidth, minWidth),
       renderHeight: hostHeight,
-      scale: hostWidth > 0 && hostWidth < MIN_WIDTH ? hostWidth / MIN_WIDTH : 1
+      scale: minWidth !== null && hostWidth > 0 && hostWidth < minWidth ? hostWidth / minWidth : 1
     };
   }
   var VegaWidget = class extends HTMLElement {
@@ -160,6 +159,7 @@
       this._embedToken = null;
       this._scaleWrapper = null;
       this._vegaContainer = null;
+      this.classList.remove("ggsql-scaled");
     }
     createStructure() {
       this.innerHTML = "";
@@ -178,6 +178,8 @@
       this._vegaContainer.style.width = `${layout.renderWidth}px`;
       this._vegaContainer.style.height = `${layout.renderHeight}px`;
       this._vegaContainer.style.transform = layout.scale < 1 ? `scale(${layout.scale})` : "";
+      if (layout.scale < 1) this.classList.add("ggsql-scaled");
+      else this.classList.remove("ggsql-scaled");
     }
     buildSimpleSpec(spec, layout) {
       return {
@@ -204,6 +206,7 @@
       this.applyLayout(layout);
       view.width(layout.renderWidth).height(layout.renderHeight).resize().runAsync().catch((err) => {
         if (self._view !== view) return;
+        self.classList.remove("ggsql-scaled");
         self.textContent = `ggsql render error: ${String(err)}`;
       });
     }
@@ -243,23 +246,31 @@
         self.applyLayout(self._layout);
       }).catch((err) => {
         if (self._embedToken !== token || self._vegaContainer !== container) return;
+        self.classList.remove("ggsql-scaled");
         self.textContent = `ggsql render error: ${String(err)}`;
       });
     }
     renderValue(x) {
       const host = readHostBox(this);
+      const minWidth = x.min_width ?? null;
       this._value = x;
       this._isCompound = isCompoundSpec(x.spec);
       if (this._isCompound) {
-        this.renderCompound(buildSimpleLayout(host.hostWidth, host.hostHeight));
+        this.renderCompound(
+          buildSimpleLayout(host.hostWidth, host.hostHeight, minWidth)
+        );
         return;
       }
-      this.renderSimple(buildSimpleLayout(host.hostWidth, host.hostHeight));
+      this.renderSimple(buildSimpleLayout(host.hostWidth, host.hostHeight, minWidth));
     }
     resize(width, height) {
       if (!this._value) return;
       const host = readHostBox(this, width, height);
-      const layout = buildSimpleLayout(host.hostWidth, host.hostHeight);
+      const layout = buildSimpleLayout(
+        host.hostWidth,
+        host.hostHeight,
+        this._value.min_width ?? null
+      );
       if (this._isCompound) {
         if (this.hasMaterialCompoundResize(layout)) this.renderCompound(layout);
         else {

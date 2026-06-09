@@ -122,8 +122,7 @@ renderGgsql <- function(
     }
 
     if (inherits(value, "Spec")) {
-      json <- ggsql_render(vegalite_writer(), value)
-      return(ggsql_widget(json))
+      return(ggsql_widget(vegalite_writer(), value))
     }
 
     if (!is.character(value) || length(value) != 1L) {
@@ -151,8 +150,7 @@ renderGgsql <- function(
       )
     }
     spec <- ggsql_execute(r, query)
-    json <- ggsql_render(vegalite_writer(), spec)
-    ggsql_widget(json)
+    ggsql_widget(vegalite_writer(), spec)
   })
 
   htmlwidgets::shinyRenderWidget(
