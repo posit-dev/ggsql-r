@@ -10,8 +10,7 @@ Spec <- R6::R6Class(
     },
 
     print = function(...) {
-      json <- ggsql_render(vegalite_writer(), self)
-      widget <- ggsql_widget(json)
+      widget <- ggsql_widget(vegalite_writer(), self)
       print(widget)
     }
   )
@@ -38,8 +37,7 @@ knit_print.Spec <- function(x, ..., inline = FALSE) {
   switch(
     writer_type,
     vegalite = {
-      json <- ggsql_render(vegalite_writer(), x)
-      widget <- ggsql_widget(json)
+      widget <- ggsql_widget(vegalite_writer(), x)
       knitr::knit_print(widget, options = options)
     },
     vegalite_svg = ,
