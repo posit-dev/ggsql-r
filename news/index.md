@@ -1,5 +1,22 @@
 # Changelog
 
+## ggsql (development version)
+
+- [`ggsql_widget()`](https://r.ggsql.org/reference/ggsql_widget.md) is
+  now exported as the public way to build a `ggsql_vega` htmlwidget from
+  a writer and spec, e.g. `ggsql_widget(vegalite_writer(), spec)`.
+
+- [`ggsql_widget()`](https://r.ggsql.org/reference/ggsql_widget.md)
+  gains a `min_width` argument. When set, the widget renders at no less
+  than that width and scales down to fit narrower hosts (useful for
+  resizable panes and small Shiny layouts).
+
+- Widgets no longer apply narrow-width scaling by default. Previously,
+  any widget in a container narrower than 450px was rendered at 450px
+  and CSS-scaled down to fit; now widgets render at their true host
+  width unless you opt in via `min_width` (pass `min_width = 450` to
+  restore the old behavior).
+
 ## ggsql 0.3.3
 
 CRAN release: 2026-06-03

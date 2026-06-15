@@ -27,6 +27,8 @@
   [`ggsql_has_visual()`](https://r.ggsql.org/reference/ggsql_validate.md)
   [`ggsql_is_valid()`](https://r.ggsql.org/reference/ggsql_validate.md)
   : Validate a ggsql query
+- [`ggsql_widget()`](https://r.ggsql.org/reference/ggsql_widget.md) :
+  Create a ggsql htmlwidget
 - [`odbc_reader()`](https://r.ggsql.org/reference/odbc_reader.md) :
   Create an ODBC reader
 - [`snowflake_reader()`](https://r.ggsql.org/reference/snowflake_reader.md)

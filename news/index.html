@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggsql</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,6 +34,12 @@
       <small>Source: <a href="https://github.com/posit-dev/ggsql-r/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="ggsql-development-version">ggsql (development version)<a class="anchor" aria-label="anchor" href="#ggsql-development-version"></a></h2>
+<ul><li><p><code><a href="../reference/ggsql_widget.html">ggsql_widget()</a></code> is now exported as the public way to build a <code>ggsql_vega</code> htmlwidget from a writer and spec, e.g. <code>ggsql_widget(vegalite_writer(), spec)</code>.</p></li>
+<li><p><code><a href="../reference/ggsql_widget.html">ggsql_widget()</a></code> gains a <code>min_width</code> argument. When set, the widget renders at no less than that width and scales down to fit narrower hosts (useful for resizable panes and small Shiny layouts).</p></li>
+<li><p>Widgets no longer apply narrow-width scaling by default. Previously, any widget in a container narrower than 450px was rendered at 450px and CSS-scaled down to fit; now widgets render at their true host width unless you opt in via <code>min_width</code> (pass <code>min_width = 450</code> to restore the old behavior).</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.3" id="ggsql-033">ggsql 0.3.3<a class="anchor" aria-label="anchor" href="#ggsql-033"></a></h2><p class="text-muted">CRAN release: 2026-06-03</p>
 <ul><li>Declare correct Rust version dependency at 1.86</li>
