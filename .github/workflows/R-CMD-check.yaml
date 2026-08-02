@@ -26,6 +26,7 @@ jobs:
           - {os: macos-latest,   r: 'release'}
 
           - {os: windows-latest, r: 'release'}
+          - {os: windows-11-arm, r: 'release'}
 
           - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release'}
           - {os: ubuntu-latest,  r: 'release'}
@@ -47,6 +48,10 @@ jobs:
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
           sudo docker image prune --all --force
           sudo docker builder prune -a
+
+      - name: Add more rust targets
+        if: ${{ runner.os == 'windows' && runner.arch == 'ARM64' }}
+        run: rustup target add aarch64-pc-windows-gnullvm
 
       - name: Install ODBC (Linux)
         if: runner.os == 'Linux'
