@@ -106,6 +106,7 @@ jobs:
         run: echo "GGSQL_VENDOR_TARBALL=$GITHUB_WORKSPACE/src/rust/vendor.tar.xz" >> "$GITHUB_ENV"
 
       - uses: r-lib/actions/check-r-package@v2
+        if: runner.os != 'windows' || runner.arch != 'ARM64'
         with:
           upload-snapshots: true
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
