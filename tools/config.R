@@ -66,11 +66,11 @@ cfg <- if (is_debug) "debug" else "release"
 # used to replace @WIN_TARGET@ in Makevars.win.in. R on Windows arm64
 # (aarch64-w64-mingw32) uses the llvm-mingw toolchain, which maps to the
 # gnullvm Rust target; x86_64/i686 keep deriving the -gnu target from $(WIN).
-.windows_target <- if(grepl("aarch", R.version$platform)){
+.windows_target <- if (grepl("aarch", R.version$platform)) {
   "aarch64-pc-windows-gnullvm"
-} else if(grepl("clang", Sys.getenv('R_COMPILED_BY'))){
+} else if (grepl("clang", Sys.getenv('R_COMPILED_BY'))) {
   "x86_64-pc-windows-gnullvm"
-} else if(grepl("i386", R.version$platform)){
+} else if (grepl("i386", R.version$platform)) {
   "i686-pc-windows-gnu"
 } else {
   "x86_64-pc-windows-gnu"
