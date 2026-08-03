@@ -105,6 +105,8 @@ jobs:
         shell: bash
         run: echo "GGSQL_VENDOR_TARBALL=$GITHUB_WORKSPACE/src/rust/vendor.tar.xz" >> "$GITHUB_ENV"
 
+      # Vignette fails on WinARM due to duckdb extension issue (duckdb/duckdb-r#2425)
+      # Enable here when fixed upstream
       - uses: r-lib/actions/check-r-package@v2
         if: runner.os != 'windows' || runner.arch != 'ARM64'
         with:

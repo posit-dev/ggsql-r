@@ -63,9 +63,7 @@ cfg <- if (is_debug) "debug" else "release"
 # there may be use cases later where this can be adapted or expanded
 .target <- ifelse(is_wasm, paste0("--target=", webr_target), "")
 
-# used to replace @WIN_TARGET@ in Makevars.win.in. R on Windows arm64
-# (aarch64-w64-mingw32) uses the llvm-mingw toolchain, which maps to the
-# gnullvm Rust target; x86_64/i686 keep deriving the -gnu target from $(WIN).
+# Infers the cargo --target on Windows
 .windows_target <- if (grepl("aarch", R.version$platform)) {
   "aarch64-pc-windows-gnullvm"
 } else if (grepl("clang", Sys.getenv('R_COMPILED_BY'))) {
