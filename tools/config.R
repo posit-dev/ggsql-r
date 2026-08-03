@@ -63,6 +63,21 @@ cfg <- if (is_debug) "debug" else "release"
 # there may be use cases later where this can be adapted or expanded
 .target <- ifelse(is_wasm, paste0("--target=", webr_target), "")
 
+# Infers the cargo --target on Windows
+.windows_target <- if (grepl("aarch", R.version$platform)) {
+  "aarch64-pc-windows-gnullvm"
+} else if (grepl("clang", Sys.getenv('R_COMPILED_BY'))) {
+  "x86_64-pc-windows-gnullvm"
+} else if (grepl("i386", R.version$platform)) {
+  "i686-pc-windows-gnu"
+} else {
+  "x86_64-pc-windows-gnu"
+}
+# used to replace @CXX_RUNTIME@ in Makevars.win.in: the DuckDB C++ objects
+# inside libggsql.a need the C++ runtime at link time. Rtools on arm64 is
+# llvm-mingw, which ships libc++ instead of libstdc++.
+.cxx_runtime <- ifelse(grepl('gnullvm', .windows_target), "-lc++", "-lstdc++")
+
 # add panic exports only for WASM builds
 .panic_exports <- ifelse(
   is_wasm,
@@ -172,6 +187,8 @@ new_txt <- gsub("@CRAN_FLAGS@", .cran_flags, mv_txt) |>
   gsub("@CLEAN_TARGET@", .clean_targets, x = _) |>
   gsub("@LIBDIR@", .libdir, x = _) |>
   gsub("@TARGET@", .target, x = _) |>
+  gsub("@WIN_TARGET@", .windows_target, x = _, fixed = TRUE) |>
+  gsub("@CXX_RUNTIME@", .cxx_runtime, x = _, fixed = TRUE) |>
   gsub("@PANIC_EXPORTS@", .panic_exports, x = _) |>
   gsub("@MACOSX_TARGET@", .macos_target, x = _) |>
   gsub("@ODBC_LIBS@", .odbc_libs, x = _)

@@ -1,9 +1,9 @@
-TARGET = $(subst 64,x86_64,$(subst 32,i686,$(WIN)))-pc-windows-gnu
+TARGET = @WIN_TARGET@
 
 TARGET_DIR = ./rust/target
 LIBDIR = $(TARGET_DIR)/$(TARGET)/@LIBDIR@
 STATLIB = $(LIBDIR)/libggsql.a
-PKG_LIBS = -L$(LIBDIR) -lggsql -lstdc++ -lbcrypt -ladvapi32 -lkernel32 -lntdll -luserenv -lws2_32 -ldbghelp -lrstrtmgr -lodbc32
+PKG_LIBS = -L$(LIBDIR) -lggsql @CXX_RUNTIME@ -lbcrypt -ladvapi32 -lkernel32 -lntdll -luserenv -lws2_32 -ldbghelp -lrstrtmgr -lodbc32
 
 all: $(SHLIB) rust_clean
 

@@ -5,3 +5,6 @@
 # flag text does not land in 00install.out and trip R CMD check's
 # non-portable-flag scan.
 export CXXFLAGS="${CXXFLAGS} -Wa,-mbig-obj"
+
+# Fixes transitive dependency 'ring' on WinARM64
+export CFLAGS_aarch64_pc_windows_msvc="--target=aarch64-w64-mingw32"

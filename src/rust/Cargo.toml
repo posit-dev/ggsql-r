@@ -12,7 +12,7 @@ crate-type = ['staticlib']
 name = 'ggsql'
 
 [dependencies]
-extendr-api = '0.8.1'
+extendr-api = '0.8.2'
 ggsql = { version = "0.3.3", default-features = false, features = ["duckdb", "odbc", "vegalite", "builtin-data"] }
 arrow = { version = "56", default-features = false, features = ["ipc"] }
 serde_json = "1.0"
