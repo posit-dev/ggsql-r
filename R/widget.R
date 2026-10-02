@@ -41,13 +41,17 @@ ggsql_widget <- function(spec, width = NULL, height = NULL) {
 
 hephaestus_dependencies <- function() {
   list(
+    # hephaestus-assets.js carries the wasm binary and fonts as embedded
+    # payloads (globalThis.ggsqlHepAssets), so the widget needs no
+    # runtime asset URLs and works in self-contained documents. htmltools
+    # deduplicates the dependency, so the payload ships once per document.
     htmltools::htmlDependency(
       name = "hephaestus-svg",
       version = hep_version,
       src = "htmlwidgets/lib/hephaestus-svg",
       package = "ggsql",
-      stylesheet = "ggsql_hep.css",
-      all_files = TRUE
+      script = "hephaestus-assets.js",
+      stylesheet = "ggsql_hep.css"
     )
   )
 }

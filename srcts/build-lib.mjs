@@ -13,6 +13,12 @@ export async function buildWidget() {
     bundle: true,
     outfile: path.join(repoRoot, generatedAsset),
     format: "iife",
+    // hephaestus-svg.js resolves its default wasm/font URLs against
+    // import.meta.url at module scope; in an IIFE that is undefined and the
+    // URL constructor throws while the bundle evaluates. Those defaults are
+    // never used — the widget passes wasm and font bytes explicitly — so any
+    // well-formed base keeps module evaluation safe.
+    define: { "import.meta.url": "document.baseURI" },
     target: ["es2020"],
     sourcemap: false,
     platform: "browser",
