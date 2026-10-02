@@ -72,9 +72,9 @@ local({
   }
 
   # 4. NOT_CRAN: skip vendor fetch and let cargo go online.
-  if (nzchar(Sys.getenv("NOT_CRAN"))) {
+  if (nzchar(Sys.getenv("NOT_CRAN")) || grepl("^(\\d+\\.){3}\\d+$", pkg_version)) {
     message(
-      "NOT_CRAN is set; skipping vendor archive fetch. ",
+      "Detected dev version or NOT_CRAN is set; skipping vendor archive fetch. ",
       "cargo will fetch crates from the network."
     )
     return(invisible())
