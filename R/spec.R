@@ -10,7 +10,7 @@ Spec <- R6::R6Class(
     },
 
     print = function(...) {
-      widget <- ggsql_widget(vegalite_writer(), self)
+      widget <- ggsql_widget(self)
       print(widget)
     }
   )
@@ -32,17 +32,18 @@ str.Spec <- function(object, ...) {
 #' @export
 knit_print.Spec <- function(x, ..., inline = FALSE) {
   options <- knitr::opts_current$get()
-  writer_type <- options$writer %||% "vegalite"
+  writer_type <- resolve_writer(options)
 
   switch(
     writer_type,
-    vegalite = {
-      widget <- ggsql_widget(vegalite_writer(), x)
+    hep = {
+      widget <- ggsql_widget(x)
       knitr::knit_print(widget, options = options)
     },
-    vegalite_svg = ,
-    vegalite_png = {
-      write_static_figure(x, sub("vegalite_", "", writer_type), options)
+    svg = ,
+    pdf = ,
+    png = {
+      write_static_figure(x, writer_type, options)
     },
     cli::cli_abort("unknown writer {.val {writer_type}}")
   )

@@ -338,12 +338,11 @@ ggsql_engine_eval <- function(query, reader, options) {
 
   # Visualization query: execute and render
   spec <- ggsql_execute(reader, query)
-  writer_type <- options$writer %||%
-    if (knitr::is_latex_output()) "vegalite_png" else "vegalite"
+  writer_type <- resolve_writer(options)
 
   # If output.var is set, always capture the Vega-Lite JSON
   if (!is.null(options$output.var)) {
-    writer <- vegalite_writer()
+    writer <- suppressWarnings(vegalite_writer())
     json <- ggsql_render(writer, spec)
     knit_env <- knitr::knit_global()
     knit_env[[options$output.var]] <- json
@@ -354,28 +353,50 @@ ggsql_engine_eval <- function(query, reader, options) {
 
   switch(
     writer_type,
-    vegalite = {
+    hep = {
       if (!is.null(options$fig.cap) && nzchar(options$fig.cap)) {
         cli::cli_warn(c(
           "{.code fig.cap} is not supported for interactive HTML output.",
-          i = "Use {.code writer = \"vegalite_svg\"} or {.code writer = \"vegalite_png\"} for captioned figures."
+          i = "Use {.code writer = \"svg\"}, {.code writer = \"pdf\"}, or {.code writer = \"png\"} for captioned figures."
         ))
       }
-      writer <- vegalite_writer()
-      widget <- ggsql_widget(writer, spec)
+      widget <- ggsql_widget(spec)
       out <- knitr::knit_print(widget, options = options)
       knitr::knit_meta_add(attr(out, "knit_meta"))
       knitr::engine_output(options, options$code, out = out)
     },
-    vegalite_svg = render_static_figure(spec, "svg", options),
-    vegalite_png = render_static_figure(spec, "png", options),
+    svg = ,
+    pdf = ,
+    png = render_static_figure(spec, writer_type, options),
     cli::cli_abort(
       c(
         "Unsupported writer {.val {writer_type}}.",
-        i = "Supported writers: {.val vegalite}, {.val vegalite_svg}, {.val vegalite_png}."
+        i = "Supported writers: {.val hep}, {.val svg}, {.val pdf}, {.val png}."
       )
     )
   )
+}
+
+# Resolve the `writer` chunk option to one of the supported writer types,
+# mapping the deprecated vegalite spellings onto their replacements.
+resolve_writer <- function(options) {
+  writer_type <- options$writer %||%
+    if (knitr::is_latex_output()) "pdf" else "hep"
+
+  legacy <- c(
+    vegalite = "hep",
+    vegalite_svg = "svg",
+    vegalite_png = "png"
+  )
+  if (writer_type %in% names(legacy)) {
+    lifecycle::deprecate_warn(
+      when = "0.4.0",
+      what = I(paste0("`writer = \"", writer_type, "\"`")),
+      with = I(paste0("`writer = \"", legacy[[writer_type]], "\"`"))
+    )
+    writer_type <- legacy[[writer_type]]
+  }
+  writer_type
 }
 
 write_static_figure <- function(spec, format, options) {
@@ -399,6 +420,7 @@ write_static_figure <- function(spec, format, options) {
   switch(
     format,
     svg = writeLines(ggsql_to_svg(spec, width, height), fig),
+    pdf = writeBin(ggsql_to_pdf(spec, width, height), fig),
     png = writeBin(ggsql_to_png(spec, width, height), fig)
   )
 

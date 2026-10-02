@@ -10,10 +10,10 @@ vegalite_writer()
 A \code{Writer} object.
 }
 \description{
-This function creates a vegalite writer which is currently the only writer
-type for ggsql
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
 }
-\examples{
-vegalite_writer()
-
+\details{
+The Vega-Lite backend is being phased out of ggsql. Use \code{\link[=svg_writer]{svg_writer()}},
+\code{\link[=pdf_writer]{pdf_writer()}}, or \code{\link[=hep_writer]{hep_writer()}} instead.
 }
+\keyword{internal}

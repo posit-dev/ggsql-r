@@ -4,26 +4,29 @@
 \alias{ggsql_save}
 \title{Save a ggsql spec to a file}
 \usage{
-ggsql_save(spec, file, width = 600, height = 400)
+ggsql_save(spec, file, width = 600, height = 400, dpi = 96)
 }
 \arguments{
 \item{spec}{A \code{Spec} object returned by \code{\link[=ggsql_execute]{ggsql_execute()}}.}
 
-\item{file}{Output file path. Extension determines format: \code{.svg}, \code{.png}, or
-\code{.json}.}
+\item{file}{Output file path. Extension determines format: \code{.svg}, \code{.pdf},
+\code{.hep}, \code{.png}, or \code{.json}.}
 
 \item{width}{Width in pixels.}
 
 \item{height}{Height in pixels.}
+
+\item{dpi}{Resolution in dots per inch.}
 }
 \value{
 \code{file}, invisibly.
 }
 \description{
-This function renders a specification and returns it either as a Vegalite
-json string, an SVG or a PNG. For the latter two, the Vegalite JSON is
-rendered to SVG using the V8 package and, potentially, converted to PNG using
-the rsvg package.
+This function renders a specification with one of the native ggsql writers
+and writes it to disk. The format is derived from the file extension:
+\code{.svg}, \code{.pdf}, and \code{.hep} are written directly by the corresponding
+writer, \code{.png} is converted from the SVG output using the rsvg package, and
+\code{.json} writes the (deprecated) Vega-Lite representation.
 }
 \examples{
 reader <- duckdb_reader()
@@ -31,7 +34,7 @@ ggsql_register(reader, mtcars, "cars")
 spec <- ggsql_execute(reader,
   "SELECT * FROM cars VISUALISE mpg AS x, disp AS y DRAW point"
 )
-spec_file <- tempfile(fileext = ".json")
+spec_file <- tempfile(fileext = ".svg")
 ggsql_save(spec, spec_file)
 
 }

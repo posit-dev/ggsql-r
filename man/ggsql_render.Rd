@@ -7,15 +7,18 @@
 ggsql_render(writer, spec)
 }
 \arguments{
-\item{writer}{A \code{Writer} object created by e.g. \code{\link[=vegalite_writer]{vegalite_writer()}}.}
+\item{writer}{A \code{Writer} object created by e.g. \code{\link[=svg_writer]{svg_writer()}}.}
 
 \item{spec}{A \code{Spec} object returned by \code{\link[=ggsql_execute]{ggsql_execute()}}.}
 }
 \value{
 Writer dependent:
 \itemize{
-\item \code{vegalite_writer}: A string holding the vegalite JSON representation of the
-visualization
+\item \code{svg_writer()}: A string holding the SVG markup of the visualization
+\item \code{pdf_writer()}: A raw vector holding the PDF document
+\item \code{hep_writer()}: A raw vector holding the \code{.hep} plot document
+\item \code{vegalite_writer()}: A string holding the Vega-Lite JSON representation
+(deprecated)
 }
 }
 \description{
@@ -29,6 +32,6 @@ spec <- ggsql_execute(reader,
   "SELECT * FROM cars VISUALISE mpg AS x DRAW histogram"
 )
 
-ggsql_render(vegalite_writer(), spec)
+ggsql_render(svg_writer(), spec)
 
 }

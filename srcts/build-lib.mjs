@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(moduleDir, "..");
 
-export const generatedAsset = "inst/htmlwidgets/ggsql_vega.js";
+export const generatedAsset = "inst/htmlwidgets/ggsql_hep.js";
 
 export async function buildWidget() {
   await esbuild.build({

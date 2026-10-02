@@ -35,8 +35,8 @@ test_that("interactive writer keeps the htmlwidget path at narrow figure widths"
 
   out <- run_query(query, fig.width = 2.35, fig.height = 4)
 
-  expect_match(out, "ggsql_vega")
-  expect_match(out, "<ggsql-vega", fixed = TRUE)
+  expect_match(out, "ggsql_hep")
+  expect_match(out, "<ggsql-hep", fixed = TRUE)
 })
 
 test_that("engine can handle a query without visualisation statement", {
@@ -312,18 +312,17 @@ test_that("connection option rejects invalid format", {
 
 # --- Writer option tests ---
 
-test_that("writer defaults to interactive vegalite", {
+test_that("writer defaults to the interactive hep widget", {
   query <- c(
     paste0("SELECT mpg, disp FROM '", data_file, "'"),
     "VISUALISE mpg AS x, disp AS y",
     "DRAW point"
   )
   out <- run_query(query)
-  expect_match(out, "ggsql_vega")
+  expect_match(out, "ggsql_hep")
 })
 
-test_that("writer = 'vegalite_svg' produces SVG output", {
-  skip_if_not_installed("V8")
+test_that("writer = 'svg' produces SVG output", {
   skip_on_cran()
   skip_if_not_installed("withr")
 
@@ -336,7 +335,7 @@ test_that("writer = 'vegalite_svg' produces SVG output", {
   )
   out <- run_query(
     query,
-    writer = "vegalite_svg",
+    writer = "svg",
     fig.path = paste0(fig_dir, "/fig-"),
     label = "test-svg"
   )
@@ -346,8 +345,30 @@ test_that("writer = 'vegalite_svg' produces SVG output", {
   expect_match(out, "\\.svg")
 })
 
-test_that("writer = 'vegalite_png' produces PNG output", {
-  skip_if_not_installed("V8")
+test_that("writer = 'pdf' produces PDF output", {
+  skip_on_cran()
+  skip_if_not_installed("withr")
+
+  fig_dir <- withr::local_tempdir()
+
+  query <- c(
+    paste0("SELECT mpg, disp FROM '", data_file, "'"),
+    "VISUALISE mpg AS x, disp AS y",
+    "DRAW point"
+  )
+  out <- run_query(
+    query,
+    writer = "pdf",
+    fig.path = paste0(fig_dir, "/fig-"),
+    label = "test-pdf"
+  )
+
+  pdf_files <- list.files(fig_dir, pattern = "\\.pdf$")
+  expect_length(pdf_files, 1L)
+  expect_match(out, "\\.pdf")
+})
+
+test_that("writer = 'png' produces PNG output", {
   skip_if_not_installed("rsvg")
   skip_on_cran()
   skip_if_not_installed("withr")
@@ -361,7 +382,7 @@ test_that("writer = 'vegalite_png' produces PNG output", {
   )
   out <- run_query(
     query,
-    writer = "vegalite_png",
+    writer = "png",
     fig.path = paste0(fig_dir, "/fig-"),
     label = "test-png"
   )
@@ -371,9 +392,39 @@ test_that("writer = 'vegalite_png' produces PNG output", {
   expect_match(out, "\\.png")
 })
 
+test_that("deprecated vegalite writer names map to their replacements", {
+  skip_on_cran()
+  skip_if_not_installed("withr")
+
+  fig_dir <- withr::local_tempdir()
+
+  query <- c(
+    paste0("SELECT mpg, disp FROM '", data_file, "'"),
+    "VISUALISE mpg AS x, disp AS y",
+    "DRAW point"
+  )
+
+  expect_warning(
+    out <- run_query(query, writer = "vegalite"),
+    "deprecated"
+  )
+  expect_match(out, "ggsql_hep")
+
+  expect_warning(
+    out <- run_query(
+      query,
+      writer = "vegalite_svg",
+      fig.path = paste0(fig_dir, "/fig-"),
+      label = "test-legacy-svg"
+    ),
+    "deprecated"
+  )
+  expect_length(list.files(fig_dir, pattern = "\\.svg$"), 1L)
+})
+
 test_that("writer option is ignored for plain SQL", {
   query <- "SELECT 1 AS x, 2 AS y"
-  out <- run_query(query, writer = "vegalite_png")
+  out <- run_query(query, writer = "png")
   # Should produce a table, not an image
   expect_snapshot(cat(out))
 })
@@ -411,7 +462,7 @@ test_that("we can knit a mixed-chunk document", {
   expect_equal(out_file, out)
   expect_true(file.exists(out))
 
-  # Check that visualization was rendered (contains ggsql-vega custom element)
+  # Check that visualization was rendered (contains ggsql-hep custom element)
   content <- readLines(out)
-  expect_true(any(grepl("ggsql_vega", content)))
+  expect_true(any(grepl("ggsql_hep", content)))
 })

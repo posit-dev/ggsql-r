@@ -66,7 +66,13 @@ GgsqlSpec$warnings_json <- function() .Call(wrap__GgsqlSpec__warnings_json, self
 
 GgsqlWriter <- new.env(parent = emptyenv())
 
-GgsqlWriter$new <- function() .Call(wrap__GgsqlWriter__new)
+GgsqlWriter$new_vegalite <- function() .Call(wrap__GgsqlWriter__new_vegalite)
+
+GgsqlWriter$new_svg <- function(width, height, dpi) .Call(wrap__GgsqlWriter__new_svg, width, height, dpi)
+
+GgsqlWriter$new_pdf <- function(width, height, dpi) .Call(wrap__GgsqlWriter__new_pdf, width, height, dpi)
+
+GgsqlWriter$new_hep <- function() .Call(wrap__GgsqlWriter__new_hep)
 
 GgsqlWriter$render <- function(spec) .Call(wrap__GgsqlWriter__render, self, spec)
 

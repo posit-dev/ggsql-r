@@ -38,7 +38,7 @@ To get the development version, change `"ggsql"` to `"posit-dev/ggsql"`.
 While one of the core appeals of the ggsql R package is the knitr engine it provides, you can also use it directly in R to execute visual queries:
 
 ```{r}
-#| writer: vegalite_svg
+#| writer: svg
 #| fig-alt: An example plot created with ggsql through the R bindings. The plot
 #|   shows a scatterplot of the mtcars dataset with mpg on the x axis and disp
 #|   on the y axis
@@ -60,7 +60,7 @@ DRAW point
 We could achieve the same in a ggsql code block by referencing an R dataset directly using the `r:` prefix
 
 ```{ggsql}
---| writer: vegalite_svg
+--| writer: svg
 --| fig-alt: An example plot created with ggsql referencing data from the R 
 --|   session. The plot shows a scatterplot of the mtcars dataset with mpg on 
 --|   the x axis and disp on the y axis

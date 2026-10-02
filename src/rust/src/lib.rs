@@ -5,7 +5,9 @@ use arrow::ipc::writer::StreamWriter;
 use arrow::record_batch::RecordBatch;
 use ggsql::reader::{execute_with_reader, DuckDBReader, OdbcReader, Reader, Spec};
 use ggsql::validate::validate as rust_validate;
-use ggsql::writer::{VegaLiteWriter as RustVegaLiteWriter, Writer};
+use ggsql::writer::{
+    HepWriter, PdfWriter, SvgWriter, VegaLiteWriter as RustVegaLiteWriter, Writer,
+};
 use ggsql::{DataFrame, GgsqlError};
 use std::io::Cursor;
 
@@ -183,8 +185,7 @@ impl GgsqlReader {
     }
 
     fn register_ipc(&self, name: &str, ipc_bytes: Raw, replace: bool) {
-        let df =
-            ipc_stream_to_df(ipc_bytes.as_slice()).expect("Failed to deserialize IPC data");
+        let df = ipc_stream_to_df(ipc_bytes.as_slice()).expect("Failed to deserialize IPC data");
         let result = match &self.inner {
             InnerReader::DuckDB(r) => r.register(name, df, replace),
             InnerReader::Odbc(r) => r.register(name, df, replace),
@@ -312,24 +313,80 @@ impl GgsqlSpec {
 }
 
 // ============================================================================
-// GgsqlWriter — wraps ggsql::writer::VegaLiteWriter
+// GgsqlWriter — dispatches across ggsql::writer backends
 // ============================================================================
+
+enum InnerWriter {
+    VegaLite(RustVegaLiteWriter),
+    Svg(SvgWriter),
+    Pdf(PdfWriter),
+    Hep(HepWriter),
+}
 
 #[extendr]
 pub struct GgsqlWriter {
-    inner: RustVegaLiteWriter,
+    inner: InnerWriter,
+}
+
+fn render_result(output: Robj, warnings: Vec<String>) -> List {
+    list!(output = output, warnings = warnings).into()
 }
 
 #[extendr]
 impl GgsqlWriter {
-    fn new() -> Self {
+    fn new_vegalite() -> Self {
         Self {
-            inner: RustVegaLiteWriter::new(),
+            inner: InnerWriter::VegaLite(RustVegaLiteWriter::new()),
         }
     }
 
-    fn render(&self, spec: &GgsqlSpec) -> String {
-        self.inner.render(&spec.inner).expect("Render failed")
+    fn new_svg(width: i32, height: i32, dpi: f64) -> Self {
+        Self {
+            inner: InnerWriter::Svg(SvgWriter::new(
+                width.max(1) as u32,
+                height.max(1) as u32,
+                dpi,
+            )),
+        }
+    }
+
+    fn new_pdf(width: i32, height: i32, dpi: f64) -> Self {
+        Self {
+            inner: InnerWriter::Pdf(PdfWriter::new(
+                width.max(1) as u32,
+                height.max(1) as u32,
+                dpi,
+            )),
+        }
+    }
+
+    fn new_hep() -> Self {
+        Self {
+            inner: InnerWriter::Hep(HepWriter::default()),
+        }
+    }
+
+    /// Render a spec. Returns a list with `output` (a string for vegalite/svg,
+    /// raw bytes for pdf/hep) and `warnings` (a character vector).
+    fn render(&self, spec: &GgsqlSpec) -> List {
+        match &self.inner {
+            InnerWriter::VegaLite(w) => {
+                let json = w.render(&spec.inner).expect("Render failed");
+                render_result(Robj::from(json), Vec::new())
+            }
+            InnerWriter::Svg(w) => {
+                let (svg, warnings) = w.render_reporting(&spec.inner).expect("Render failed");
+                render_result(Robj::from(svg), warnings)
+            }
+            InnerWriter::Pdf(w) => {
+                let (bytes, warnings) = w.render_reporting(&spec.inner).expect("Render failed");
+                render_result(Raw::from_bytes(&bytes).into_robj(), warnings)
+            }
+            InnerWriter::Hep(w) => {
+                let (bytes, warnings) = w.render_reporting(&spec.inner).expect("Render failed");
+                render_result(Raw::from_bytes(&bytes).into_robj(), warnings)
+            }
+        }
     }
 }
 

@@ -85,7 +85,7 @@ get_session_reader <- function(session) {
 ggsqlOutput <- function(outputId, width = "100%", height = "400px") {
   htmlwidgets::shinyWidgetOutput(
     outputId,
-    name = "ggsql_vega",
+    name = "ggsql_hep",
     width = width,
     height = height,
     package = "ggsql"
@@ -122,7 +122,7 @@ renderGgsql <- function(
     }
 
     if (inherits(value, "Spec")) {
-      return(ggsql_widget(vegalite_writer(), value))
+      return(ggsql_widget(value))
     }
 
     if (!is.character(value) || length(value) != 1L) {
@@ -150,7 +150,7 @@ renderGgsql <- function(
       )
     }
     spec <- ggsql_execute(r, query)
-    ggsql_widget(vegalite_writer(), spec)
+    ggsql_widget(spec)
   })
 
   htmlwidgets::shinyRenderWidget(

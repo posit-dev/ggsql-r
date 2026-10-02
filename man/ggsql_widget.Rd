@@ -4,23 +4,20 @@
 \alias{ggsql_widget}
 \title{Create a ggsql htmlwidget}
 \usage{
-ggsql_widget(writer, spec, width = NULL, height = NULL, min_width = NULL)
+ggsql_widget(spec, width = NULL, height = NULL)
 }
 \arguments{
-\item{writer}{A \code{Writer} object created by e.g. \code{\link[=vegalite_writer]{vegalite_writer()}}.}
-
 \item{spec}{A \code{Spec} object returned by \code{\link[=ggsql_execute]{ggsql_execute()}}.}
 
 \item{width, height}{Optional widget dimensions passed to
 \code{\link[htmlwidgets:createWidget]{htmlwidgets::createWidget()}}.}
-
-\item{min_width}{Optional minimum render width for small containers. When
-supplied, the widget renders at at least this width and scales down to fit
-narrower hosts.}
 }
 \value{
-An \code{htmlwidget} with class \code{ggsql_vega}.
+An \code{htmlwidget} with class \code{ggsql_hep}.
 }
 \description{
-Create a \code{ggsql_vega} htmlwidget from a writer and spec.
+Create a \code{ggsql_hep} htmlwidget from a spec. The spec is rendered to a
+\code{.hep} plot document server-side and displayed in the browser with the
+hephaestus SVG renderer compiled to WebAssembly, which re-lays out the
+plot as its container changes size.
 }

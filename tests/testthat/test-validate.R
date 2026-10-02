@@ -8,7 +8,7 @@ test_that("ggsql_validate returns a ggsql_validated object", {
 })
 
 test_that("ggsql_validate detects errors", {
-  v <- ggsql_validate("SELECT 1 AS x VISUALISE x DRAW point")
+  v <- ggsql_validate("SELECT 1 AS x VISUALISE x AS DRAW point")
   expect_false(v$valid)
   expect_true(NROW(v$errors) > 0)
 })

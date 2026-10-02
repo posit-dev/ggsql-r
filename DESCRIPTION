@@ -1,6 +1,6 @@
 Package: ggsql
 Title: Grammar of Graphics for SQL
-Version: 0.3.3.9000
+Version: 0.5.1.9000
 Authors@R: c(
     person("Thomas Lin", "Pedersen", , "thomas.pedersen@posit.co",
            role = c("aut", "cre"), comment = c(ORCID = "0000-0002-5147-4711")),
@@ -30,6 +30,7 @@ Imports:
     htmlwidgets,
     jsonlite,
     knitr,
+    lifecycle,
     nanoarrow,
     R6,
     rlang (>= 1.1.0),
@@ -42,7 +43,6 @@ Suggests:
     rsvg,
     shiny,
     testthat (>= 3.0.0),
-    V8,
     withr
 Config/testthat/edition: 3
 Config/rextendr/version: 0.4.2.9000

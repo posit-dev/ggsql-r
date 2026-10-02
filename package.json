@@ -6,7 +6,7 @@
   "scripts": {
     "build": "node srcts/build.mjs",
     "typecheck": "npm exec -- tsc -p tsconfig.json",
-    "test": "tsx --test srcts/vega/widget.test.ts srcts/vega/compound_sizing.test.ts",
+    "test": "echo \"no js tests\"",
     "check": "node tools/check-js.mjs"
   },
   "devDependencies": {

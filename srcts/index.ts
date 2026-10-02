@@ -1,8 +1,8 @@
-// Bundle entrypoint — registers VegaWidget as a custom element and
+// Bundle entrypoint — registers HepWidget as a custom element and
 // wires it up as an htmlwidgets binding. This is the only file with
 // side effects; everything else is pure exports.
 
-import { VegaWidget, type WidgetValue } from "./vega/widget";
+import { HepWidget, type WidgetValue } from "./hep/widget";
 
 type HtmlWidgetInstance = {
   renderValue: (x: WidgetValue) => void;
@@ -12,9 +12,9 @@ type HtmlWidgetInstance = {
 type HtmlWidgetDefinition = {
   name: string;
   type: string;
-  factory: (el: VegaWidget) => HtmlWidgetInstance;
-  renderError: (el: VegaWidget, err: { message: string }) => void;
-  clearError: (el: VegaWidget) => void;
+  factory: (el: HepWidget) => HtmlWidgetInstance;
+  renderError: (el: HepWidget, err: { message: string }) => void;
+  clearError: (el: HepWidget) => void;
 };
 
 declare const HTMLWidgets: {
@@ -22,7 +22,7 @@ declare const HTMLWidgets: {
 };
 
 HTMLWidgets.widget({
-  name: "ggsql_vega",
+  name: "ggsql_hep",
   type: "output",
 
   factory(el) {
@@ -32,7 +32,7 @@ HTMLWidgets.widget({
       },
 
       resize(width, height) {
-        el.resize(width, height);
+        el.resize();
       }
     };
   },
@@ -47,6 +47,6 @@ HTMLWidgets.widget({
   }
 });
 
-if (!customElements.get("ggsql-vega")) {
-  customElements.define("ggsql-vega", VegaWidget);
+if (!customElements.get("ggsql-hep")) {
+  customElements.define("ggsql-hep", HepWidget);
 }
