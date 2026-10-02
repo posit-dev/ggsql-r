@@ -1,52 +1,35 @@
 /* Stylesheet for the ggsql_hep htmlwidget.
  *
- * The @font-face rules give the browser the same Roboto faces the wasm
- * shaper measures text with — every text run is placed with one anchor plus
- * `textLength`, so a substitute face would be squeezed into a width measured
- * from a different font. Relative URLs resolve against this file, which the
- * hephaestus-svg htmlDependency serves alongside fonts/.
-
+ * The Roboto @font-face rules are injected by the widget script (blob URLs
+ * built from the embedded font bytes) rather than declared here, so the
+ * stylesheet carries no asset URLs and survives self-contained inlining.
+ *
  * Loaded once per document regardless of how many ggsql widgets it carries. */
 
-@font-face {
-  font-family: 'Roboto';
-  font-style: normal;
-  font-weight: 400;
-  font-display: block;
-  src: url('fonts/roboto-regular.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Roboto';
-  font-style: normal;
-  font-weight: 700;
-  font-display: block;
-  src: url('fonts/roboto-bold.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Roboto';
-  font-style: italic;
-  font-weight: 400;
-  font-display: block;
-  src: url('fonts/roboto-italic.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Roboto';
-  font-style: italic;
-  font-weight: 700;
-  font-display: block;
-  src: url('fonts/roboto-bolditalic.ttf') format('truetype');
-}
-
+/* The host may allot a fixed pixel width (htmlwidgets turns knitr chunk
+ * figure dimensions into an inline `width: Npx`). That width is a ceiling,
+ * not a mandate: when the containing block is narrower — as in Positron's
+ * notebook output frame, whose width tracks the window — max-width clamps
+ * the element to what is actually provided, and PlotView's container
+ * observer re-lays out the plot to fit. A fixed pixel width would otherwise
+ * overflow the frame into scrollbars. */
 ggsql-hep {
   display: block;
   width: 100%;
+  max-width: 100%;
   height: 100%;
   overflow: hidden;
 }
 
 ggsql-hep > svg {
   display: block;
+}
+
+/* Notebook output hosts (e.g. Positron's inline view) wrap the widget in a
+ * bare page whose <body> carries its own padding (observed: 0 20px), leaving
+ * dead space beside the plot. Zero it, but only when the body is exactly this
+ * widget plus non-rendering elements — the guard keeps full documents
+ * (Quarto, Shiny), where this stylesheet also loads, untouched. */
+body:has(> ggsql-hep):not(:has(> :not(ggsql-hep, script, style, link))) {
+  padding: 0;
 }
