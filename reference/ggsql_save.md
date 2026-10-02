@@ -1,14 +1,16 @@
 # Save a ggsql spec to a file
 
-This function renders a specification and returns it either as a
-Vegalite json string, an SVG or a PNG. For the latter two, the Vegalite
-JSON is rendered to SVG using the V8 package and, potentially, converted
-to PNG using the rsvg package.
+This function renders a specification with one of the native ggsql
+writers and writes it to disk. The format is derived from the file
+extension: `.svg`, `.pdf`, and `.hep` are written directly by the
+corresponding writer, `.png` is converted from the SVG output using the
+rsvg package, and `.json` writes the (deprecated) Vega-Lite
+representation.
 
 ## Usage
 
 ``` r
-ggsql_save(spec, file, width = 600, height = 400)
+ggsql_save(spec, file, width = 600, height = 400, dpi = 96)
 ```
 
 ## Arguments
@@ -20,8 +22,8 @@ ggsql_save(spec, file, width = 600, height = 400)
 
 - file:
 
-  Output file path. Extension determines format: `.svg`, `.png`, or
-  `.json`.
+  Output file path. Extension determines format: `.svg`, `.pdf`, `.hep`,
+  `.png`, or `.json`.
 
 - width:
 
@@ -30,6 +32,10 @@ ggsql_save(spec, file, width = 600, height = 400)
 - height:
 
   Height in pixels.
+
+- dpi:
+
+  Resolution in dots per inch.
 
 ## Value
 
@@ -43,6 +49,6 @@ ggsql_register(reader, mtcars, "cars")
 spec <- ggsql_execute(reader,
   "SELECT * FROM cars VISUALISE mpg AS x, disp AS y DRAW point"
 )
-spec_file <- tempfile(fileext = ".json")
+spec_file <- tempfile(fileext = ".svg")
 ggsql_save(spec, spec_file)
 ```

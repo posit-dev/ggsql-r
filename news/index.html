@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggsql</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,11 +36,19 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="ggsql-development-version">ggsql (development version)<a class="anchor" aria-label="anchor" href="#ggsql-development-version"></a></h2>
-<ul><li>
-<code><a href="../reference/ggsql_widget.html">ggsql_widget()</a></code> is now exported as the public way to build a <code>ggsql_vega</code> htmlwidget from a writer and spec, e.g. <code>ggsql_widget(vegalite_writer(), spec)</code>.</li>
+<p>This release updates the bundled ggsql Rust library to 0.5.2 and moves display and export over to the new native writers, with breaking changes to <code><a href="../reference/ggsql_widget.html">ggsql_widget()</a></code> and the <code>writer</code> knitr chunk option:</p>
+<ul><li>The bundled ggsql Rust library has been updated to 0.5.2, bringing the new native hephaestus-based writers.</li>
+<li>New writers: <code><a href="../reference/svg_writer.html">svg_writer()</a></code>, <code><a href="../reference/svg_writer.html">pdf_writer()</a></code>, and <code><a href="../reference/svg_writer.html">hep_writer()</a></code>, rendered natively by ggsql without any JavaScript round-trip. <code><a href="../reference/vegalite_writer.html">vegalite_writer()</a></code> is deprecated and will be removed in a future release.</li>
 <li>
-<code><a href="../reference/ggsql_widget.html">ggsql_widget()</a></code> gains a <code>min_width</code> argument. When set, the widget renders at no less than that width and scales down to fit narrower hosts (useful for resizable panes and small Shiny layouts).</li>
-<li>Widgets no longer apply narrow-width scaling by default. Previously, any widget in a container narrower than 450px was rendered at 450px and CSS-scaled down to fit; now widgets render at their true host width unless you opt in via <code>min_width</code> (pass <code>min_width = 450</code> to restore the old behavior).</li>
+<code><a href="../reference/ggsql_save.html">ggsql_save()</a></code> now exports SVG and PDF directly through the native writers, and also supports <code>.hep</code> output. PNG export converts the native SVG output with rsvg. The V8 package is no longer needed for rendering.</li>
+<li>Display has moved from Vega-Lite to a <code>.hep</code> plot document rendered in the browser by the hephaestus SVG renderer compiled to WebAssembly:
+<ul><li>
+<code><a href="../reference/ggsql_widget.html">ggsql_widget()</a></code> now takes a spec as its only required argument (<code>ggsql_widget(spec)</code>) and produces a <code>ggsql_hep</code> htmlwidget that re-lays out the plot as its container changes size, with fonts bundled.</li>
+<li>The <code>min_width</code> argument has been removed; the new renderer re-layouts rather than scales, so narrow containers get a properly laid out plot.</li>
+<li>The <code>writer</code> knitr chunk option now accepts <code>"hep"</code> (default for HTML output), <code>"svg"</code>, <code>"pdf"</code> (default for LaTeX output), and <code>"png"</code>. The old <code>"vegalite"</code>/<code>"vegalite_svg"</code>/<code>"vegalite_png"</code> values still work with a deprecation warning.</li>
+</ul></li>
+<li>
+<code><a href="../reference/ggsql_widget.html">ggsql_widget()</a></code> is now exported as the public way to build an htmlwidget from a spec.</li>
 <li>Now works correctly on Windows ARM64 (<a href="https://github.com/posit-dev/ggsql-r/issues/15" class="external-link">#15</a>)</li>
 </ul></div>
     <div class="section level2">

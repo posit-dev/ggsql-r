@@ -1,19 +1,17 @@
 # Create a ggsql htmlwidget
 
-Create a `ggsql_vega` htmlwidget from a writer and spec.
+Create a `ggsql_hep` htmlwidget from a spec. The spec is rendered to a
+`.hep` plot document server-side and displayed in the browser with the
+hephaestus SVG renderer compiled to WebAssembly, which re-lays out the
+plot as its container changes size.
 
 ## Usage
 
 ``` r
-ggsql_widget(writer, spec, width = NULL, height = NULL, min_width = NULL)
+ggsql_widget(spec, width = NULL, height = NULL)
 ```
 
 ## Arguments
-
-- writer:
-
-  A `Writer` object created by e.g.
-  [`vegalite_writer()`](https://r.ggsql.org/reference/vegalite_writer.md).
 
 - spec:
 
@@ -25,12 +23,6 @@ ggsql_widget(writer, spec, width = NULL, height = NULL, min_width = NULL)
   Optional widget dimensions passed to
   [`htmlwidgets::createWidget()`](https://rdrr.io/pkg/htmlwidgets/man/createWidget.html).
 
-- min_width:
-
-  Optional minimum render width for small containers. When supplied, the
-  widget renders at at least this width and scales down to fit narrower
-  hosts.
-
 ## Value
 
-An `htmlwidget` with class `ggsql_vega`.
+An `htmlwidget` with class `ggsql_hep`.

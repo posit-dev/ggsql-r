@@ -1,0 +1,52 @@
+/* Stylesheet for the ggsql_hep htmlwidget.
+ *
+ * The @font-face rules give the browser the same Roboto faces the wasm
+ * shaper measures text with — every text run is placed with one anchor plus
+ * `textLength`, so a substitute face would be squeezed into a width measured
+ * from a different font. Relative URLs resolve against this file, which the
+ * hephaestus-svg htmlDependency serves alongside fonts/.
+
+ * Loaded once per document regardless of how many ggsql widgets it carries. */
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('fonts/roboto-regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+  src: url('fonts/roboto-bold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: italic;
+  font-weight: 400;
+  font-display: block;
+  src: url('fonts/roboto-italic.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: italic;
+  font-weight: 700;
+  font-display: block;
+  src: url('fonts/roboto-bolditalic.ttf') format('truetype');
+}
+
+ggsql-hep {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+ggsql-hep > svg {
+  display: block;
+}

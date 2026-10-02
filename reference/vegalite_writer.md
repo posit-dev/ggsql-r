@@ -1,7 +1,6 @@
 # Create a Vega-Lite writer
 
-This function creates a vegalite writer which is currently the only
-writer type for ggsql
+**\[deprecated\]**
 
 ## Usage
 
@@ -13,9 +12,9 @@ vegalite_writer()
 
 A `Writer` object.
 
-## Examples
+## Details
 
-``` r
-vegalite_writer()
-#> <ggsql_writer> [vegalite]
-```
+The Vega-Lite backend is being phased out of ggsql. Use
+[`svg_writer()`](https://r.ggsql.org/reference/svg_writer.md),
+[`pdf_writer()`](https://r.ggsql.org/reference/svg_writer.md), or
+[`hep_writer()`](https://r.ggsql.org/reference/svg_writer.md) instead.

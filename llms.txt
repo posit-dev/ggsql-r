@@ -111,8 +111,10 @@ Rmarkdown/Quarto document so the knitr engine is registered.
   [`ggsql_stat_sql()`](https://r.ggsql.org/reference/spec_utility.md)
   [`ggsql_warnings()`](https://r.ggsql.org/reference/spec_utility.md) :
   Utility functions for visualization specifications
-- [`vegalite_writer()`](https://r.ggsql.org/reference/vegalite_writer.md)
-  : Create a Vega-Lite writer
+- [`svg_writer()`](https://r.ggsql.org/reference/svg_writer.md)
+  [`pdf_writer()`](https://r.ggsql.org/reference/svg_writer.md)
+  [`hep_writer()`](https://r.ggsql.org/reference/svg_writer.md) : Create
+  a writer for a ggsql spec
 
 # Articles
 
