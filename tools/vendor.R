@@ -34,8 +34,9 @@ local({
   desc <- read.dcf(file.path(pkg_root, "DESCRIPTION"))
   pkg_version <- unname(desc[, "Version"])
 
+  # digest streams the file and works on R >= 4.2 (tools::sha256sum needs R >= 4.5)
   sha256 <- function(path) {
-    unname(tools::sha256sum(path))
+    unname(digest::digest(file = path, algo = "sha256"))
   }
 
   copy <- function(src, dest) {
@@ -49,7 +50,9 @@ local({
   if (nzchar(override)) {
     if (!file.exists(override)) {
       stop(
-        "GGSQL_VENDOR_TARBALL points at '", override, "' which does not exist.",
+        "GGSQL_VENDOR_TARBALL points at '",
+        override,
+        "' which does not exist.",
         call. = FALSE
       )
     }
@@ -60,7 +63,9 @@ local({
 
   # 2. Already-extracted vendor directory.
   if (dir.exists(vendor_dir)) {
-    message("Vendor directory already extracted at src/rust/vendor; skipping fetch.")
+    message(
+      "Vendor directory already extracted at src/rust/vendor; skipping fetch."
+    )
     return(invisible())
   }
 
@@ -72,7 +77,9 @@ local({
   }
 
   # 4. NOT_CRAN: skip vendor fetch and let cargo go online.
-  if (nzchar(Sys.getenv("NOT_CRAN")) || grepl("^(\\d+\\.){3}\\d+$", pkg_version)) {
+  if (
+    nzchar(Sys.getenv("NOT_CRAN")) || grepl("^(\\d+\\.){3}\\d+$", pkg_version)
+  ) {
     message(
       "Detected dev version or NOT_CRAN is set; skipping vendor archive fetch. ",
       "cargo will fetch crates from the network."
@@ -95,11 +102,15 @@ local({
       error = function(e) {
         unlink(dest)
         stop(
-          "Failed to download vendor archive from\n  ", url,
-          "\nReason: ", conditionMessage(e),
+          "Failed to download vendor archive from\n  ",
+          url,
+          "\nReason: ",
+          conditionMessage(e),
           "\n\nTo bypass network fetch, set one of:\n",
           "  GGSQL_VENDOR_TARBALL=/path/to/vendor.tar.xz   (use a local archive)\n",
-          "  GGSQL_VENDOR_URL=https://example/v", pkg_version, " (override URL)\n",
+          "  GGSQL_VENDOR_URL=https://example/v",
+          pkg_version,
+          " (override URL)\n",
           "  NOT_CRAN=true                                  (skip fetch, build online)",
           call. = FALSE
         )
@@ -108,7 +119,8 @@ local({
     if (!identical(status, 0L) || !file.exists(dest) || file.size(dest) == 0L) {
       unlink(dest)
       stop(
-        "Download from\n  ", url,
+        "Download from\n  ",
+        url,
         "\nreturned no usable file.",
         call. = FALSE
       )
@@ -123,7 +135,8 @@ local({
   expected_sha <- sub("\\s.*$", "", readLines(sha_tmp, warn = FALSE)[[1]])
   if (!grepl("^[0-9a-fA-F]{64}$", expected_sha)) {
     stop(
-      "Sidecar checksum at\n  ", sha_url,
+      "Sidecar checksum at\n  ",
+      sha_url,
       "\nis not a valid 64-character hex sha256.",
       call. = FALSE
     )
@@ -135,13 +148,22 @@ local({
   got_sha <- sha256(archive_tmp)
   if (!identical(got_sha, expected_sha)) {
     stop(
-      "SHA256 mismatch for vendor archive downloaded from\n  ", archive_url,
-      "\nExpected: ", expected_sha,
-      "\nGot:      ", got_sha,
+      "SHA256 mismatch for vendor archive downloaded from\n  ",
+      archive_url,
+      "\nExpected: ",
+      expected_sha,
+      "\nGot:      ",
+      got_sha,
       call. = FALSE
     )
   }
 
   copy(archive_tmp, vendor_xz)
-  message("Vendor archive placed at ", vendor_xz, " (", file.size(vendor_xz), " bytes)")
+  message(
+    "Vendor archive placed at ",
+    vendor_xz,
+    " (",
+    file.size(vendor_xz),
+    " bytes)"
+  )
 })

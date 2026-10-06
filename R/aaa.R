@@ -22,6 +22,7 @@ check_custom <- function(
   )
 }
 
+#' @importFrom digest digest
 check_r6 <- function(
   x,
   class,
