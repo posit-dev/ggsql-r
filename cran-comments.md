@@ -1,2 +1,1 @@
-Patch release at request of CRAN. Fix compilation on both mac archs along with
-properly declaring Rust version dependency.
+Minor release bumping the ggsql rust dependency to the most recent

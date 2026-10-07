@@ -926,7 +926,7 @@ dependencies = [
 
 [[package]]
 name = "ggsql-r"
-version = "0.4.0"
+version = "0.5.2"
 dependencies = [
  "arrow",
  "extendr-api",

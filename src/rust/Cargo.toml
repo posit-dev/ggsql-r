@@ -3,7 +3,7 @@
 [package]
 name = 'ggsql-r'
 publish = false
-version = '0.4.0'
+version = '0.5.2'
 edition = '2021'
 rust-version = '1.86'
 
