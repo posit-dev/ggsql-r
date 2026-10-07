@@ -31,7 +31,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ggsql</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -89,10 +89,13 @@
 <span><span class="fu"><a href="reference/ggsql_register.html">ggsql_register</a></span><span class="op">(</span><span class="va">reader</span>, <span class="va">mtcars</span>, <span class="st">"amazing_data"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Visualize it with a query</span></span>
-<span><span class="fu"><a href="reference/ggsql_execute.html">ggsql_execute</a></span><span class="op">(</span><span class="va">reader</span>, <span class="st">"</span></span>
+<span><span class="fu"><a href="reference/ggsql_execute.html">ggsql_execute</a></span><span class="op">(</span></span>
+<span>  <span class="va">reader</span>,</span>
+<span>  <span class="st">"</span></span>
 <span><span class="st">VISUALIZE mpg AS x, disp AS y FROM amazing_data</span></span>
 <span><span class="st">DRAW point</span></span>
-<span><span class="st">"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="st">"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-unnamed-chunk-2-1.svg" alt="An example plot created with ggsql through the R bindings. The plot shows a scatterplot of the mtcars dataset with mpg on the x axis and disp on the y axis" width="100%"></p>
 <p>We could achieve the same in a ggsql code block by referencing an R dataset directly using the <code>r:</code> prefix</p>
 <pre class="ggsql"><code>VISUALIZE mpg AS x, disp AS y FROM r:mtcars
@@ -101,6 +104,24 @@ LABEL
   title =&gt; 'That data came from R 🤯'</code></pre>
 <p><img src="reference/figures/README-unnamed-chunk-3-1.svg" alt="An example plot created with ggsql referencing data from the R session. The plot shows a scatterplot of the mtcars dataset with mpg on the x axis and disp on the y axis" width="100%"></p>
 <p>The only thing you need to remember is to load ggsql into R in your Rmarkdown/Quarto document so the knitr engine is registered.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r.ggsql.org">ggsql</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Create an in-memory DuckDB reader</span></span>
+<span><span class="va">reader</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/duckdb_reader.html">duckdb_reader</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Register a dataset in it</span></span>
+<span><span class="fu"><a href="reference/ggsql_register.html">ggsql_register</a></span><span class="op">(</span><span class="va">reader</span>, <span class="va">mtcars</span>, <span class="st">"amazing_data"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Visualize it with a query</span></span>
+<span><span class="fu"><a href="reference/ggsql_execute.html">ggsql_execute</a></span><span class="op">(</span></span>
+<span>  <span class="va">reader</span>,</span>
+<span>  <span class="st">"</span></span>
+<span><span class="st">VISUALIZE mpg AS x, disp AS y FROM amazing_data</span></span>
+<span><span class="st">DRAW point</span></span>
+<span><span class="st">"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-4-1.svg" alt="An example plot created with ggsql through the R bindings. The plot shows a scatterplot of the mtcars dataset with mpg on the x axis and disp on the y axis" width="100%"></p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

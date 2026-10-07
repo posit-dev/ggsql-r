@@ -38,10 +38,13 @@ reader <- duckdb_reader()
 ggsql_register(reader, mtcars, "amazing_data")
 
 # Visualize it with a query
-ggsql_execute(reader, "
+ggsql_execute(
+  reader,
+  "
 VISUALIZE mpg AS x, disp AS y FROM amazing_data
 DRAW point
-")
+"
+)
 ```
 
 ![An example plot created with ggsql through the R bindings. The plot
@@ -65,3 +68,27 @@ axis](reference/figures/README-unnamed-chunk-3-1.svg)
 
 The only thing you need to remember is to load ggsql into R in your
 Rmarkdown/Quarto document so the knitr engine is registered.
+
+``` r
+
+library(ggsql)
+
+# Create an in-memory DuckDB reader
+reader <- duckdb_reader()
+
+# Register a dataset in it
+ggsql_register(reader, mtcars, "amazing_data")
+
+# Visualize it with a query
+ggsql_execute(
+  reader,
+  "
+VISUALIZE mpg AS x, disp AS y FROM amazing_data
+DRAW point
+"
+)
+```
+
+![An example plot created with ggsql through the R bindings. The plot
+shows a scatterplot of the mtcars dataset with mpg on the x axis and
+disp on the y axis](reference/figures/README-unnamed-chunk-4-1.svg)
