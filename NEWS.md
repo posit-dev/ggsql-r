@@ -1,3 +1,5 @@
+# ggsql (development version)
+
 # ggsql 0.5.2
 
 This release updates the bundled ggsql Rust library to 0.5.2 and moves display
