@@ -18,6 +18,10 @@ GgsqlReader <- new.env(parent = emptyenv())
 
 GgsqlReader$new <- function(connection) .Call(wrap__GgsqlReader__new, connection)
 
+GgsqlReader$new_caching <- function(connection, ttl_secs, max_bytes, enabled) .Call(wrap__GgsqlReader__new_caching, connection, ttl_secs, max_bytes, enabled)
+
+GgsqlReader$new_caching_custom <- function(execute_sql, register, unregister, ttl_secs, max_bytes, enabled) .Call(wrap__GgsqlReader__new_caching_custom, execute_sql, register, unregister, ttl_secs, max_bytes, enabled)
+
 GgsqlReader$new_custom <- function(execute_sql, register, unregister) .Call(wrap__GgsqlReader__new_custom, execute_sql, register, unregister)
 
 GgsqlReader$register_ipc <- function(name, ipc_bytes, replace) invisible(.Call(wrap__GgsqlReader__register_ipc, self, name, ipc_bytes, replace))

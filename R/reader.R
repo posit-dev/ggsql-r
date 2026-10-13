@@ -356,24 +356,177 @@ custom_reader <- function(execute_sql, register = NULL, unregister = NULL) {
   check_function(register, allow_null = TRUE)
   check_function(unregister, allow_null = TRUE)
 
-  # The Rust side always exchanges tables as Arrow IPC bytes. We wrap the
-  # user's hooks so Rust never sees an R data.frame. NULL maps to an empty
-  # frame — matches the public `ggsql_execute_sql()` contract for value-less
-  # statements (e.g. CREATE TABLE) that ggsql issues internally.
+  wrapped <- wrap_reader_callbacks(execute_sql, register, unregister)
+  reader <- Reader$new(NULL)
+  reader$.ptr <- GgsqlReader$new_custom(
+    wrapped$execute_sql,
+    wrapped$register,
+    wrapped$unregister
+  )
+  reader
+}
+
+# The Rust side always exchanges tables as Arrow IPC bytes. We wrap the
+# user's hooks so Rust never sees an R data.frame. NULL maps to an empty
+# frame — matches the public `ggsql_execute_sql()` contract for value-less
+# statements (e.g. CREATE TABLE) that ggsql issues internally.
+wrap_reader_callbacks <- function(execute_sql, register, unregister) {
+  # Re-raise hook errors without call info so the Rust side surfaces the
+  # bare condition message (via geterrmessage()) rather than a deparsed
+  # call — e.g. DuckDB's "Catalog Error: ..." reaches the caller intact.
+  raise_clean <- function(e) {
+    stop(conditionMessage(e), call. = FALSE)
+  }
   exec_wrapped <- function(sql) {
-    out <- execute_sql(sql)
-    if (is.null(out)) out <- data.frame()
+    out <- tryCatch(execute_sql(sql), error = raise_clean)
+    if (is.null(out)) {
+      out <- data.frame()
+    }
     if (is.raw(out)) out else df_to_ipc(out)
   }
   reg_wrapped <- if (!is.null(register)) {
     function(name, ipc_bytes, replace) {
-      register(name, ipc_to_df(ipc_bytes), isTRUE(replace))
+      tryCatch(
+        register(name, ipc_to_df(ipc_bytes), isTRUE(replace)),
+        error = raise_clean
+      )
       invisible(NULL)
     }
   }
+  unreg_wrapped <- if (!is.null(unregister)) {
+    function(name) {
+      tryCatch(unregister(name), error = raise_clean)
+    }
+  }
+  list(
+    execute_sql = exec_wrapped,
+    register = reg_wrapped,
+    unregister = unreg_wrapped
+  )
+}
+
+#' Create a caching reader
+#'
+#' Wraps a primary reader with an in-memory DuckDB cache. Source reads hit
+#' the primary and are memoized (a time-to-live plus an LRU byte budget);
+#' all ggsql-generated derived tables run on the private in-memory cache.
+#' Because every layer source is staged through that cache, queries with
+#' layer-level sources (`VISUALISE ... DRAW ... FROM <table>`) work through
+#' a caching reader.
+#'
+#' @param primary Either a connection string (same schemes as
+#'   [duckdb_reader()] / [odbc_reader()] / [snowflake_reader()], e.g.
+#'   `"duckdb://memory"`) or a function `function(sql)` that executes `sql`
+#'   and returns a data frame (or raw Arrow IPC bytes), as in
+#'   [custom_reader()]. To wrap an existing reader, pass its connection
+#'   string instead — a `Reader` object cannot be wrapped directly.
+#' @param register,unregister Optional callbacks used only when `primary` is
+#'   a function, with the same meaning as in [custom_reader()].
+#' @param ttl_secs Seconds before a memoized read is treated as stale.
+#'   `NULL` (the default) uses the `GGSQL_CACHE_TTL` environment variable,
+#'   falling back to 300.
+#' @param max_bytes Cumulative byte budget across memoized results before
+#'   LRU eviction. `NULL` (the default) uses the `GGSQL_CACHE_MAX_BYTES`
+#'   environment variable, falling back to 512 MiB.
+#' @param enabled When `FALSE`, reads always hit the primary. `NULL` (the
+#'   default) uses the `GGSQL_CACHE_DISABLED` environment variable, falling
+#'   back to `TRUE`.
+#'
+#' @section Registered tables and `ggsql_table_names()`:
+#' Tables registered via [ggsql_register()] on a caching reader live in the
+#' private cache, not the primary database, so the primary's `SHOW TABLES`
+#' does not list them. [ggsql_table_names()] and [ggsql_table()] still see
+#' them: registrations are tracked and merged into the backend's listing.
+#' Note that `SHOW TABLES` is itself a memoizable read, so tables created
+#' on the primary by other means (e.g. a `CREATE TABLE` statement) can take
+#' up to `ttl_secs` to appear in the listing.
+#'
+#' @return A `Reader` object, usable anywhere the other `*_reader()`
+#'   constructors are accepted.
+#'
+#' @export
+#'
+#' @family readers
+#'
+#' @examples
+#' reader <- caching_reader("duckdb://memory")
+#' ggsql_register(reader, mtcars, "cars")
+#' ggsql_execute_sql(reader, "SELECT mpg, disp FROM cars LIMIT 3")
+#'
+#' # Wrapping R callbacks (the custom-reader path): identical reads are
+#' # served from the cache without hitting the primary.
+#' backend <- duckdb_reader()
+#' reader <- caching_reader(
+#'   primary = function(sql) ggsql_execute_sql(backend, sql),
+#'   register = function(name, df, replace) {
+#'     ggsql_register(backend, df, name, replace = replace)
+#'   },
+#'   unregister = function(name) ggsql_unregister(backend, name)
+#' )
+#' ggsql_register(reader, mtcars, "cars")
+#' ggsql_execute_sql(reader, "SELECT mpg, disp FROM cars LIMIT 3")
+#'
+caching_reader <- function(
+  primary,
+  register = NULL,
+  unregister = NULL,
+  ttl_secs = NULL,
+  max_bytes = NULL,
+  enabled = NULL
+) {
+  if (inherits(primary, "Reader")) {
+    cli::cli_abort(
+      paste(
+        "{.fn caching_reader} cannot wrap an existing {.cls Reader};",
+        "pass its connection string instead",
+        "(e.g. {.code caching_reader(\"duckdb://memory\")})."
+      )
+    )
+  }
+  check_function(register, allow_null = TRUE)
+  check_function(unregister, allow_null = TRUE)
+  check_number_decimal(ttl_secs, min = 0, allow_null = TRUE)
+  check_number_decimal(max_bytes, min = 0, allow_null = TRUE)
+  check_logical(enabled, allow_null = TRUE)
+
+  ttl_secs <- if (!is.null(ttl_secs)) as.numeric(ttl_secs)
+  max_bytes <- if (!is.null(max_bytes)) as.numeric(max_bytes)
 
   reader <- Reader$new(NULL)
-  reader$.ptr <- GgsqlReader$new_custom(exec_wrapped, reg_wrapped, unregister)
+  if (is.function(primary)) {
+    wrapped <- wrap_reader_callbacks(primary, register, unregister)
+    reader$.ptr <- GgsqlReader$new_caching_custom(
+      wrapped$execute_sql,
+      wrapped$register,
+      wrapped$unregister,
+      ttl_secs,
+      max_bytes,
+      enabled
+    )
+  } else {
+    check_string(primary, allow_empty = FALSE)
+    if (!is.null(register) || !is.null(unregister)) {
+      cli::cli_abort(
+        "{.arg register} and {.arg unregister} are only used when {.arg primary} is a function."
+      )
+    }
+    schemes <- c("duckdb", "odbc", "snowflake")
+    scheme <- tolower(sub("://.*$", "", primary))
+    if (!scheme %in% schemes) {
+      cli::cli_abort(
+        "Unsupported connection scheme {.val {scheme}}; expected one of {.or {.val {schemes}}}."
+      )
+    }
+    reader$.ptr <- GgsqlReader$new_caching(
+      primary,
+      ttl_secs,
+      max_bytes,
+      enabled
+    )
+    if (startsWith(tolower(primary), "duckdb://")) {
+      configure_duckdb_paths(reader$.ptr)
+    }
+  }
   reader
 }
 
@@ -409,6 +562,8 @@ Reader <- R6::R6Class(
   cloneable = FALSE,
   public = list(
     .ptr = NULL,
+    # Names registered via `ggsql_register()`; see `ggsql_table_names()`.
+    .registered = character(0),
 
     initialize = function(connection) {
       # `NULL` lets subclasses / factory constructors install a custom
@@ -465,6 +620,10 @@ ggsql_register <- function(reader, df, name, replace = FALSE) {
   check_string(name, allow_empty = FALSE)
   ipc_bytes <- df_to_ipc(df)
   reader$.ptr$register_ipc(name, ipc_bytes, replace)
+  # Track registrations so `ggsql_table_names()` can merge them into the
+  # backend's listing — on a caching reader they land in the private cache,
+  # which `SHOW TABLES` (routed to the primary) never sees.
+  reader$.registered <- union(reader$.registered, name)
   invisible(reader)
 }
 
@@ -474,6 +633,7 @@ ggsql_unregister <- function(reader, name) {
   check_r6(reader, "Reader")
   check_string(name, allow_empty = FALSE)
   reader$.ptr$unregister(name)
+  reader$.registered <- setdiff(reader$.registered, name)
   invisible(reader)
 }
 
@@ -491,7 +651,8 @@ ggsql_table <- function(reader, name) {
 #' @rdname ggsql_register
 #' @export
 ggsql_table_names <- function(reader) {
-  ggsql_execute_sql(reader, "SHOW TABLES")$name
+  check_r6(reader, "Reader")
+  union(ggsql_execute_sql(reader, "SHOW TABLES")$name, reader$.registered)
 }
 
 #' Execute a ggsql query

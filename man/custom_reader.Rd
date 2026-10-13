@@ -56,6 +56,7 @@ ggsql_execute_sql(reader, "SELECT mpg, disp FROM cars LIMIT 3")
 }
 \seealso{
 Other readers: 
+\code{\link{caching_reader}()},
 \code{\link{duckdb_reader}()},
 \code{\link{odbc_reader}()},
 \code{\link{snowflake_reader}()}

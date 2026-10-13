@@ -31,6 +31,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          # Opt in to checking out fork PR code under pull_request_target.
+          # Safe here: the checked-out code is only ever treated as passive
+          # data (air reformats it; reviewdog posts suggestions) — nothing
+          # from the fork is executed. See the comment on the trigger above.
+          allow-unsafe-pr-checkout: true
 
       - name: Install
         uses: posit-dev/setup-air@v1

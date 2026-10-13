@@ -5,3 +5,5 @@ node_modules
 src/vendor
 src/rust/vendor.tar.xz
 src/rust/vendor/
+sandbox/
+notes-*.md

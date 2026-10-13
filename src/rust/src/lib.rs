@@ -3,7 +3,8 @@ use extendr_api::prelude::*;
 use arrow::ipc::reader::StreamReader;
 use arrow::ipc::writer::StreamWriter;
 use arrow::record_batch::RecordBatch;
-use ggsql::reader::{execute_with_reader, DuckDBReader, OdbcReader, Reader, Spec};
+use ggsql::reader::cache::{CacheConfig, CacheConfigOverride};
+use ggsql::reader::{execute_with_reader, CachingReader, DuckDBReader, OdbcReader, Reader, Spec};
 use ggsql::validate::validate as rust_validate;
 use ggsql::writer::{
     HepWriter, PdfWriter, SvgWriter, VegaLiteWriter as RustVegaLiteWriter, Writer,
@@ -58,14 +59,31 @@ struct RCallbackReader {
     unregister_fn: Option<Robj>,
 }
 
+// SAFETY: `Robj` is not `Send` because R's C API is single-threaded, but an
+// `RCallbackReader` never actually crosses threads: it is created, invoked,
+// and dropped entirely on the R main thread (via `.Call` into `GgsqlReader`
+// methods and R's GC finalizer). The `Send` bound on `CachingReader`'s
+// primary reader is therefore honored by construction.
+unsafe impl Send for RCallbackReader {}
+
 impl RCallbackReader {
     fn call_fn(fun: &Robj, args: Pairlist, hook: &str) -> std::result::Result<Robj, GgsqlError> {
         let f: Function = fun
             .clone()
             .try_into()
             .map_err(|_| GgsqlError::ReaderError(format!("{hook} hook is not an R function")))?;
-        f.call(args)
-            .map_err(|e| GgsqlError::ReaderError(format!("{hook} hook failed: {e}")))
+        f.call(args).map_err(|e| {
+            // extendr's error Display shows the failed call, not the R
+            // condition message; surface the message so consumers (e.g. an
+            // LLM tool loop) see the underlying "Catalog Error: ..." rather
+            // than an opaque wrapper.
+            let detail = R!("geterrmessage()")
+                .ok()
+                .and_then(|r| r.as_str().map(|s| s.trim().to_string()))
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| e.to_string());
+            GgsqlError::ReaderError(format!("{hook} hook failed: {detail}"))
+        })
     }
 }
 
@@ -119,6 +137,60 @@ enum InnerReader {
     DuckDB(DuckDBReader),
     Odbc(OdbcReader),
     Custom(RCallbackReader),
+    Caching(CachingReader),
+}
+
+/// Build a native reader from a connection string, dispatching on the URI
+/// scheme (same rules as `GgsqlReader::new`).
+fn native_reader_from_connection(
+    connection: &str,
+) -> std::result::Result<Box<dyn Reader + Send>, String> {
+    let scheme = connection.split("://").next().unwrap_or("").to_lowercase();
+    match scheme.as_str() {
+        "duckdb" => DuckDBReader::from_connection_string(connection)
+            .map(|r| Box::new(r) as Box<dyn Reader + Send>)
+            .map_err(|e| e.to_string()),
+        "odbc" => OdbcReader::from_connection_string(connection)
+            .map(|r| Box::new(r) as Box<dyn Reader + Send>)
+            .map_err(|e| e.to_string()),
+        "snowflake" => {
+            // See the snowflake arm of `GgsqlReader::new` for why the URI is
+            // rewritten to odbc:// with Driver=Snowflake.
+            let params = connection.split_once("://").map(|x| x.1).unwrap_or("");
+            let odbc_uri = if params.to_lowercase().contains("driver=") {
+                format!("odbc://{params}")
+            } else {
+                format!("odbc://Driver=Snowflake;{params}")
+            };
+            OdbcReader::from_connection_string(&odbc_uri)
+                .map(|r| Box::new(r) as Box<dyn Reader + Send>)
+                .map_err(|e| e.to_string())
+        }
+        other => Err(format!("Unsupported connection scheme: {other}")),
+    }
+}
+
+/// Merge optional per-field overrides (from R `NULL`s) onto env-derived
+/// cache configuration.
+fn cache_config(
+    ttl_secs: Nullable<f64>,
+    max_bytes: Nullable<f64>,
+    enabled: Nullable<bool>,
+) -> CacheConfig {
+    CacheConfig::from_env().merge(CacheConfigOverride {
+        ttl_secs: match ttl_secs {
+            Nullable::NotNull(v) if v >= 0.0 => Some(v as u64),
+            _ => None,
+        },
+        max_bytes: match max_bytes {
+            Nullable::NotNull(v) if v >= 0.0 => Some(v as u64),
+            _ => None,
+        },
+        enabled: match enabled {
+            Nullable::NotNull(v) => Some(v),
+            _ => None,
+        },
+    })
 }
 
 #[extendr]
@@ -162,6 +234,60 @@ impl GgsqlReader {
         Self { inner }
     }
 
+    /// Create a caching reader wrapping a native primary (given as a
+    /// connection string). Source reads hit the primary and are memoized
+    /// (TTL + LRU byte budget); derived tables live in a private in-memory
+    /// DuckDB cache. `NULL` config values fall back to the GGSQL_CACHE_*
+    /// environment variables, then defaults.
+    fn new_caching(
+        connection: &str,
+        ttl_secs: Nullable<f64>,
+        max_bytes: Nullable<f64>,
+        enabled: Nullable<bool>,
+    ) -> Self {
+        let cache = DuckDBReader::from_connection_string("duckdb://memory")
+            .expect("Failed to create the in-memory cache backend");
+        let primary = native_reader_from_connection(connection)
+            .expect("Failed to create the caching reader's primary");
+        Self {
+            inner: InnerReader::Caching(CachingReader::with_config(
+                primary,
+                Box::new(cache),
+                connection,
+                "duckdb",
+                cache_config(ttl_secs, max_bytes, enabled),
+            )),
+        }
+    }
+
+    /// Create a caching reader wrapping a callback (custom) primary. The URI
+    /// only feeds cache-key derivation, which needs a stable-per-instance
+    /// string; the cache is private to each reader, so a constant suffices.
+    fn new_caching_custom(
+        execute_sql: Robj,
+        register: Robj,
+        unregister: Robj,
+        ttl_secs: Nullable<f64>,
+        max_bytes: Nullable<f64>,
+        enabled: Nullable<bool>,
+    ) -> Self {
+        let cache = DuckDBReader::from_connection_string("duckdb://memory")
+            .expect("Failed to create the in-memory cache backend");
+        let custom = Self::new_custom(execute_sql, register, unregister);
+        let InnerReader::Custom(primary) = custom.inner else {
+            unreachable!("new_custom always builds a Custom reader")
+        };
+        Self {
+            inner: InnerReader::Caching(CachingReader::with_config(
+                Box::new(primary),
+                Box::new(cache),
+                "r-callback",
+                "duckdb",
+                cache_config(ttl_secs, max_bytes, enabled),
+            )),
+        }
+    }
+
     fn new_custom(execute_sql: Robj, register: Robj, unregister: Robj) -> Self {
         fn opt_fn(r: Robj, name: &str) -> Option<Robj> {
             if r.is_null() {
@@ -190,6 +316,7 @@ impl GgsqlReader {
             InnerReader::DuckDB(r) => r.register(name, df, replace),
             InnerReader::Odbc(r) => r.register(name, df, replace),
             InnerReader::Custom(r) => r.register(name, df, replace),
+            InnerReader::Caching(r) => r.register(name, df, replace),
         };
         result.expect("Failed to register table");
     }
@@ -199,6 +326,7 @@ impl GgsqlReader {
             InnerReader::DuckDB(r) => r.unregister(name),
             InnerReader::Odbc(r) => r.unregister(name),
             InnerReader::Custom(r) => r.unregister(name),
+            InnerReader::Caching(r) => r.unregister(name),
         };
         result.expect("Failed to unregister table");
     }
@@ -208,6 +336,7 @@ impl GgsqlReader {
             InnerReader::DuckDB(r) => r.execute_sql(sql),
             InnerReader::Odbc(r) => r.execute_sql(sql),
             InnerReader::Custom(r) => r.execute_sql(sql),
+            InnerReader::Caching(r) => r.execute_sql(sql),
         }
         .expect("SQL execution failed");
         let bytes = df_to_ipc_stream(&df).expect("Failed to serialize DataFrame");
@@ -219,6 +348,7 @@ impl GgsqlReader {
             InnerReader::DuckDB(r) => r.execute(query),
             InnerReader::Odbc(r) => r.execute(query),
             InnerReader::Custom(r) => r.execute(query),
+            InnerReader::Caching(r) => r.execute(query),
         }
         .expect("Query execution failed");
         GgsqlSpec { inner: spec }

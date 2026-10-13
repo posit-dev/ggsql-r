@@ -1,5 +1,15 @@
 # ggsql (development version)
 
+* New `caching_reader()` wraps a primary reader (a connection string or R
+  callbacks, as in `custom_reader()`) with an in-memory DuckDB cache. Source
+  reads are memoized with a TTL and LRU byte budget, and ggsql-generated
+  derived tables run on the private cache, so queries with layer-level
+  sources (`VISUALISE ... DRAW ... FROM <table>`) work end to end. Cache
+  behavior is configured with the `GGSQL_CACHE_TTL`,
+  `GGSQL_CACHE_MAX_BYTES`, and `GGSQL_CACHE_DISABLED` environment
+  variables, overridable per reader via the `ttl_secs`, `max_bytes`, and
+  `enabled` arguments.
+
 # ggsql 0.5.2
 
 This release updates the bundled ggsql Rust library to 0.5.2 and moves display
